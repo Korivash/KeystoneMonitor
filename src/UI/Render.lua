@@ -7,6 +7,52 @@ local FONT_PATHS = {
     SKURRI = "Fonts\\SKURRI.ttf",
 }
 
+local function getFloodgateCompletedPreviewState()
+    return {
+        inChallenge = true,
+        challengeCompleted = true,
+        completedOnTime = true,
+        completionTimeMs = 1974000,
+        elapsed = 1974,
+        timeLimit = 2040,
+        mapID = nil,
+        mapName = "Operation: Floodgate",
+        level = 10,
+        deathCount = 6,
+        deathPenalty = 30,
+        forcesCurrent = 100,
+        forcesTotal = 100,
+        objectives = {
+            { text = "Douse Security", completed = true, doneAt = 430 },
+            { text = "Disable Aqua Grid", completed = true, doneAt = 1120 },
+            { text = "Defeat Head Engineer", completed = true, doneAt = 1865 },
+        },
+    }
+end
+
+local function getInProgressPreviewState()
+    return {
+        inChallenge = true,
+        challengeCompleted = false,
+        completedOnTime = nil,
+        completionTimeMs = nil,
+        elapsed = 1286,
+        timeLimit = 2040,
+        mapID = nil,
+        mapName = "Operation: Floodgate",
+        level = 10,
+        deathCount = 4,
+        deathPenalty = 20,
+        forcesCurrent = 78,
+        forcesTotal = 100,
+        objectives = {
+            { text = "Douse Security", completed = true, doneAt = 430 },
+            { text = "Disable Aqua Grid", completed = false, doneAt = nil },
+            { text = "Defeat Head Engineer", completed = false, doneAt = nil },
+        },
+    }
+end
+
 local function savePosition()
     if not ns.ui.root then
         return
@@ -74,8 +120,17 @@ function ns:ApplyTheme()
         accentR, accentG, accentB, accentA = self:HexToRGBA(appearance.accentColor, 0.33, 0.73, 1.00, 1)
     end
 
+    local panelAlpha = tonumber(self.db.profile.alpha) or 1
+    if panelAlpha < 0 then
+        panelAlpha = 0
+    elseif panelAlpha > 1 then
+        panelAlpha = 1
+    end
+
     local backgroundR, backgroundG, backgroundB, backgroundA = self:HexToRGBA(appearance.backgroundColor, 0.05, 0.05, 0.05, 0.78)
+    backgroundA = backgroundA * panelAlpha
     local borderR, borderG, borderB, borderA = self:HexToRGBA(appearance.borderColor, 0.2, 0.2, 0.2, 0.95)
+    borderA = borderA * panelAlpha
     local textR, textG, textB, textA = self:HexToRGBA(appearance.textColor, 0.95, 0.95, 0.95, 1)
     local timerR, timerG, timerB, timerA = self:HexToRGBA(appearance.timerColor, accentR, accentG, accentB, 1)
     local barR, barG, barB, barA = self:HexToRGBA(appearance.forcesBarColor, accentR, accentG, accentB, 0.95)
@@ -110,7 +165,6 @@ function ns:ApplyFrameSettings()
     local width = tonumber(appearance.frameWidth) or 350
     local height = tonumber(appearance.frameHeight) or 248
     local scale = tonumber(self.db.profile.scale) or 1
-    local alpha = tonumber(self.db.profile.alpha) or 1
     local fontScale = tonumber(appearance.fontScale) or 1
     local titleFont = FONT_PATHS[appearance.titleFont] or FONT_PATHS.FRIZQT
     local timerFont = FONT_PATHS[appearance.timerFont] or FONT_PATHS.ARIALN
@@ -118,7 +172,6 @@ function ns:ApplyFrameSettings()
 
     self.ui.root:SetSize(width, height)
     self.ui.root:SetScale(scale)
-    self.ui.root:SetAlpha(alpha)
 
     local function setFontScale(fontString, baseSize, fontPath)
         local currentFont, _, flags = fontString:GetFont()
@@ -164,45 +217,73 @@ function ns:Render()
         return
     end
 
-    local mapText = self.state.mapName
-    if self.state.level and self.state.level > 0 then
-        mapText = string.format("%s  +%d", self.state.mapName, self.state.level)
+    local state = self.state
+    if self.ui.previewMode then
+        local previewScenario = self.db.profile.previewScenario or "LIVE"
+        if previewScenario == "FLOODGATE_COMPLETED" then
+            state = getFloodgateCompletedPreviewState()
+        elseif previewScenario == "IN_PROGRESS" then
+            state = getInProgressPreviewState()
+        end
+    end
+
+    local mapText = state.mapName
+    if state.level and state.level > 0 then
+        mapText = string.format("%s  +%d", state.mapName, state.level)
     end
     self.ui.title:SetText(mapText)
-    self.ui.timer:SetText(self:FormatTime(self.state.elapsed))
+    self.ui.timer:SetText(self:FormatTime(state.elapsed))
 
-    local recordSummary = self:GetRecordSummary()
-    local comparisonSummary = self:GetBestTimedComparisonSummary()
-    if recordSummary and comparisonSummary then
-        self.ui.recordText:SetText(recordSummary .. "\n" .. comparisonSummary)
+    if self.ui.previewMode and (self.db.profile.previewScenario == "FLOODGATE_COMPLETED" or self.db.profile.previewScenario == "IN_PROGRESS") then
+        self.ui.recordText:SetText("PB 32:54  |  Best Timed 32:54")
     else
-        self.ui.recordText:SetText(recordSummary or comparisonSummary or "")
+        local recordSummary = self:GetRecordSummary()
+        local comparisonSummary = self:GetBestTimedComparisonSummary()
+        if recordSummary and comparisonSummary then
+            self.ui.recordText:SetText(recordSummary .. "\n" .. comparisonSummary)
+        else
+            self.ui.recordText:SetText(recordSummary or comparisonSummary or "")
+        end
     end
 
-    if self.state.challengeCompleted then
-        if self.state.completedOnTime then
+    if state.challengeCompleted then
+        if state.completedOnTime then
             self.ui.statusText:SetText("|cff7CFC00COMPLETED (Timed)|r")
         else
             self.ui.statusText:SetText("|cffFF9966COMPLETED|r")
+        end
+    elseif self.db.profile.showPaceHints and (tonumber(state.timeLimit) or 0) > 0 then
+        local elapsed = tonumber(state.elapsed) or 0
+        local penalty = tonumber(state.deathPenalty) or 0
+        local limit = tonumber(state.timeLimit) or 0
+        local effective = elapsed + penalty
+        if effective <= (limit * 0.6) then
+            self.ui.statusText:SetText("|cff7CFC00PACE: +3|r")
+        elseif effective <= (limit * 0.8) then
+            self.ui.statusText:SetText("|cff53B9FFPACE: +2|r")
+        elseif effective <= limit then
+            self.ui.statusText:SetText("|cffFFD966PACE: +1|r")
+        else
+            self.ui.statusText:SetText("|cffFF6666PACE: Overtime|r")
         end
     else
         self.ui.statusText:SetText("")
     end
     updateAffixIcons()
 
-    local limit = tonumber(self.state.timeLimit) or 0
+    local limit = tonumber(state.timeLimit) or 0
     if limit <= 0 then
         self.ui.chest3:SetText("+3 --:--")
         self.ui.chest2:SetText("+2 --:--")
         self.ui.chest1:SetText("+1 --:--")
     else
-        self.ui.chest3:SetText("+3 " .. self:FormatTime((limit * 0.6) - self.state.elapsed))
-        self.ui.chest2:SetText("+2 " .. self:FormatTime((limit * 0.8) - self.state.elapsed))
-        self.ui.chest1:SetText("+1 " .. self:FormatTime(limit - self.state.elapsed))
+        self.ui.chest3:SetText("+3 " .. self:FormatTime((limit * 0.6) - state.elapsed))
+        self.ui.chest2:SetText("+2 " .. self:FormatTime((limit * 0.8) - state.elapsed))
+        self.ui.chest1:SetText("+1 " .. self:FormatTime(limit - state.elapsed))
     end
 
-    local total = tonumber(self.state.forcesTotal) or 0
-    local current = tonumber(self.state.forcesCurrent) or 0
+    local total = tonumber(state.forcesTotal) or 0
+    local current = tonumber(state.forcesCurrent) or 0
     if total > 0 then
         local pct = math.min(1, math.max(0, current / total))
         self.ui.forcesBar:SetValue(pct)
@@ -216,7 +297,7 @@ function ns:Render()
         self.ui.forcesText:SetText("|cffBFBFBF[ ]|r Forces 0 / 0 (0.0%)")
     end
 
-    self.ui.deaths:SetText(string.format("Deaths %d  |  Penalty %s", self.state.deathCount, self:FormatTime(self.state.deathPenalty)))
+    self.ui.deaths:SetText(string.format("Deaths %d  |  Penalty %s", state.deathCount, self:FormatTime(state.deathPenalty)))
 
     local maxObjectiveRows = #self.ui.objectiveRows
     local firstRow = self.ui.objectiveRows[1]
@@ -239,13 +320,13 @@ function ns:Render()
 
     for i = 1, #self.ui.objectiveRows do
         local row = self.ui.objectiveRows[i]
-        local objective = self.state.objectives[i]
+        local objective = state.objectives[i]
         if i > maxObjectiveRows then
             row:Hide()
         elseif objective then
             row:Show()
             if objective.completed then
-                row:SetText(string.format("|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r", objective.text, self:FormatTime(objective.doneAt or self.state.elapsed)))
+                row:SetText(string.format("|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r", objective.text, self:FormatTime(objective.doneAt or state.elapsed)))
             else
                 row:SetText(string.format("|cffBFBFBF[ ]|r %s", objective.text))
             end
@@ -302,9 +383,9 @@ function ns:BuildUI()
     chest1:SetPoint("TOPLEFT", chest2, "BOTTOMLEFT", 0, -3)
 
     local recordText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    recordText:SetPoint("TOPLEFT", timer, "BOTTOMLEFT", 0, -2)
-    recordText:SetPoint("TOPRIGHT", root, "TOPRIGHT", -10, -48)
-    recordText:SetJustifyH("LEFT")
+    recordText:SetPoint("TOPLEFT", timer, "BOTTOMLEFT", 0, -12)
+    recordText:SetPoint("TOPRIGHT", root, "TOPRIGHT", -10, -58)
+    recordText:SetJustifyH("CENTER")
 
     local affixRow = CreateFrame("Frame", nil, root)
     affixRow:SetPoint("TOPLEFT", recordText, "BOTTOMLEFT", 0, -6)

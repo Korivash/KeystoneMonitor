@@ -20,6 +20,12 @@ local FONT_OPTIONS = {
     { key = "SKURRI", name = "Skurri" },
 }
 
+local PREVIEW_SCENARIO_OPTIONS = {
+    { key = "LIVE", name = "Live Data" },
+    { key = "IN_PROGRESS", name = "Simulated In-Progress" },
+    { key = "FLOODGATE_COMPLETED", name = "Floodgate Completed" },
+}
+
 local PRESET_OPTIONS = {
     {
         key = "KEYSTONE",
@@ -115,6 +121,9 @@ local EXPORT_FIELDS = {
     "locked",
     "showWhenUnlocked",
     "showBestTimedComparison",
+    "showPaceHints",
+    "previewScenario",
+    "useFloodgateCompletedPreview",
     "scale",
     "alpha",
     "useClassColor",
@@ -354,6 +363,9 @@ local function buildExportString()
         locked = profile.locked and "1" or "0",
         showWhenUnlocked = profile.showWhenUnlocked and "1" or "0",
         showBestTimedComparison = profile.showBestTimedComparison and "1" or "0",
+        showPaceHints = profile.showPaceHints and "1" or "0",
+        previewScenario = tostring(profile.previewScenario or "LIVE"),
+        useFloodgateCompletedPreview = ((profile.previewScenario or "LIVE") == "FLOODGATE_COMPLETED") and "1" or "0",
         scale = string.format("%.2f", profile.scale or 1),
         alpha = string.format("%.2f", profile.alpha or 1),
         useClassColor = appearance.useClassColor and "1" or "0",
@@ -419,11 +431,24 @@ local function applyImportString(serialized)
     if map.showBestTimedComparison then
         profile.showBestTimedComparison = map.showBestTimedComparison ~= "0"
     end
+    if map.showPaceHints then
+        profile.showPaceHints = map.showPaceHints ~= "0"
+    end
+    if map.previewScenario then
+        if map.previewScenario == "LIVE" or map.previewScenario == "IN_PROGRESS" or map.previewScenario == "FLOODGATE_COMPLETED" then
+            profile.previewScenario = map.previewScenario
+        end
+    end
+    if map.useFloodgateCompletedPreview then
+        if map.useFloodgateCompletedPreview == "1" then
+            profile.previewScenario = "FLOODGATE_COMPLETED"
+        end
+    end
     if map.scale then
         profile.scale = clamp(tonumber(map.scale) or profile.scale or 1, 0.70, 1.80)
     end
     if map.alpha then
-        profile.alpha = clamp(tonumber(map.alpha) or profile.alpha or 1, 0.25, 1.00)
+        profile.alpha = clamp(tonumber(map.alpha) or profile.alpha or 1, 0.00, 1.00)
     end
     if map.useClassColor then
         appearance.useClassColor = map.useClassColor == "1"
@@ -582,7 +607,9 @@ function ns:RefreshOptionsUI()
     frame.lockCheck:SetChecked(profile.locked and true or false)
     frame.showUnlockedCheck:SetChecked(profile.showWhenUnlocked and true or false)
     frame.showBestTimedComparisonCheck:SetChecked(profile.showBestTimedComparison and true or false)
+    frame.showPaceHintsCheck:SetChecked(profile.showPaceHints and true or false)
     frame.useClassColorCheck:SetChecked(appearance.useClassColor and true or false)
+    dropdownSetValue(frame.previewScenarioDrop.dropdown, PREVIEW_SCENARIO_OPTIONS, profile.previewScenario or "LIVE")
 
     frame.widthSlider:SetValue(appearance.frameWidth or 350)
     frame.heightSlider:SetValue(appearance.frameHeight or 248)
@@ -621,7 +648,7 @@ end
 
 function ns:BuildOptionsUI()
     local frame = CreateFrame("Frame", "KeystoneMonitorOptionsFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(860, 860)
+    frame:SetSize(940, 920)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
@@ -655,7 +682,7 @@ function ns:BuildOptionsUI()
     local header = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     header:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
     header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
-    header:SetHeight(64)
+    header:SetHeight(72)
     header:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
     header:SetBackdropColor(0.07, 0.10, 0.14, 1)
 
@@ -665,27 +692,30 @@ function ns:BuildOptionsUI()
     accent:SetHeight(2)
     accent:SetColorTexture(0.33, 0.73, 1.00, 0.95)
 
-    label(header, "Keystone Monitor UI STUDIO", "GameFontNormalLarge", "TOPLEFT", header, "TOPLEFT", 14, -10)
-    local sub = label(header, "Profiles, presets, and deep skinning", "GameFontHighlightSmall", "TOPLEFT", header, "TOPLEFT", 14, -27)
+    label(header, "Keystone Monitor UI STUDIO", "GameFontNormalLarge", "TOP", header, "TOP", 0, -12)
+    local sub = label(header, "Profiles, presets, and deep skinning", "GameFontHighlightSmall", "TOP", header, "TOP", 0, -31)
     sub:SetTextColor(0.67, 0.76, 0.86)
 
-    local behavior = section(frame, "Behavior", "TOPLEFT", header, "BOTTOMLEFT", 12, -18, 404, 150)
-    local layout = section(frame, "Layout & Sizing", "TOPRIGHT", header, "BOTTOMRIGHT", -12, -18, 404, 300)
-    local fonts = section(frame, "Per-Element Fonts", "TOPLEFT", behavior, "BOTTOMLEFT", 0, -10, 404, 160)
+    local colWidth = 448
+    local gutter = 20
+    local topOffset = -18
 
-    local actions = section(frame, "Actions", "BOTTOMLEFT", frame, "BOTTOMLEFT", 12, 12, 816, 100)
+    local behavior = section(frame, "Behavior", "TOPLEFT", header, "BOTTOMLEFT", 12, topOffset, colWidth, 280)
+    local layout = section(frame, "Layout & Sizing", "TOPRIGHT", header, "BOTTOMRIGHT", -12, topOffset, colWidth, 320)
+    local fonts = section(frame, "Per-Element Fonts", "TOPLEFT", behavior, "BOTTOMLEFT", 0, -12, colWidth, 168)
+    local actions = section(frame, "Actions", "BOTTOM", frame, "BOTTOM", 0, 12, (colWidth * 2) + gutter, 92)
 
-    local profiles = section(frame, "Presets & Profile Import/Export", "TOPLEFT", fonts, "BOTTOMLEFT", 0, -10, 404, 200)
+    local profiles = section(frame, "Presets & Profile Import/Export", "TOPLEFT", fonts, "BOTTOMLEFT", 0, -12, colWidth, 200)
     profiles:ClearAllPoints()
-    profiles:SetPoint("TOPLEFT", fonts, "BOTTOMLEFT", 0, -10)
-    profiles:SetPoint("BOTTOMLEFT", actions, "TOPLEFT", 0, 10)
-    profiles:SetWidth(404)
+    profiles:SetPoint("TOPLEFT", fonts, "BOTTOMLEFT", 0, -12)
+    profiles:SetPoint("BOTTOMLEFT", actions, "TOPLEFT", 0, 12)
+    profiles:SetWidth(colWidth)
 
-    local colors = section(frame, "Hex Skin Colors (RRGGBB or RRGGBBAA)", "TOPRIGHT", layout, "BOTTOMRIGHT", 0, -10, 404, 200)
+    local colors = section(frame, "Hex Skin Colors (RRGGBB or RRGGBBAA)", "TOPRIGHT", layout, "BOTTOMRIGHT", 0, -12, colWidth, 200)
     colors:ClearAllPoints()
-    colors:SetPoint("TOPRIGHT", layout, "BOTTOMRIGHT", 0, -10)
-    colors:SetPoint("BOTTOMRIGHT", actions, "TOPRIGHT", 0, 10)
-    colors:SetWidth(404)
+    colors:SetPoint("TOPRIGHT", layout, "BOTTOMRIGHT", 0, -12)
+    colors:SetPoint("BOTTOMRIGHT", actions, "TOPRIGHT", 0, 12)
+    colors:SetWidth(colWidth)
 
     local lockCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
     lockCheck:SetPoint("TOPLEFT", behavior, "TOPLEFT", 12, -30)
@@ -721,9 +751,32 @@ function ns:BuildOptionsUI()
         ns:ApplyTheme()
     end)
 
+    local showPaceHintsCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
+    showPaceHintsCheck:SetPoint("TOPLEFT", useClassColorCheck, "BOTTOMLEFT", 0, -10)
+    showPaceHintsCheck.Text:SetText("Show pace hints on tracker")
+    showPaceHintsCheck:SetScript("OnClick", function(button)
+        ns.db.profile.showPaceHints = button:GetChecked() and true or false
+        ns:Render()
+    end)
+
+    local previewScenarioDrop = makeDropdown(
+        behavior,
+        "Preview Scenario",
+        PREVIEW_SCENARIO_OPTIONS,
+        "TOPLEFT",
+        showPaceHintsCheck,
+        "BOTTOMLEFT",
+        0,
+        -8,
+        function(key)
+            ns.db.profile.previewScenario = key
+            ns:Render()
+        end
+    )
+
     local widthSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
     widthSlider:SetPoint("TOPLEFT", layout, "TOPLEFT", 12, -32)
-    widthSlider:SetWidth(376)
+    widthSlider:SetWidth(420)
     widthSlider:SetMinMaxValues(280, 760)
     widthSlider:SetValueStep(2)
     styleSlider(widthSlider, "Frame Width", 280, 760)
@@ -736,7 +789,7 @@ function ns:BuildOptionsUI()
 
     local heightSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
     heightSlider:SetPoint("TOPLEFT", widthSlider, "BOTTOMLEFT", 0, -36)
-    heightSlider:SetWidth(376)
+    heightSlider:SetWidth(420)
     heightSlider:SetMinMaxValues(200, 520)
     heightSlider:SetValueStep(2)
     styleSlider(heightSlider, "Frame Height", 200, 520)
@@ -749,7 +802,7 @@ function ns:BuildOptionsUI()
 
     local scaleSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
     scaleSlider:SetPoint("TOPLEFT", heightSlider, "BOTTOMLEFT", 0, -36)
-    scaleSlider:SetWidth(376)
+    scaleSlider:SetWidth(420)
     scaleSlider:SetMinMaxValues(0.70, 1.80)
     scaleSlider:SetValueStep(0.01)
     styleSlider(scaleSlider, "Frame Scale", 0.70, 1.80)
@@ -762,10 +815,10 @@ function ns:BuildOptionsUI()
 
     local alphaSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
     alphaSlider:SetPoint("TOPLEFT", scaleSlider, "BOTTOMLEFT", 0, -36)
-    alphaSlider:SetWidth(376)
-    alphaSlider:SetMinMaxValues(0.25, 1.00)
+    alphaSlider:SetWidth(420)
+    alphaSlider:SetMinMaxValues(0.00, 1.00)
     alphaSlider:SetValueStep(0.01)
-    styleSlider(alphaSlider, "Frame Opacity", 0.25, 1.00)
+    styleSlider(alphaSlider, "Frame Opacity", 0.00, 1.00)
     alphaSlider:SetScript("OnValueChanged", function(slider, value)
         local rounded = tonumber(string.format("%.2f", value)) or 1
         ns.db.profile.alpha = rounded
@@ -775,7 +828,7 @@ function ns:BuildOptionsUI()
 
     local fontScaleSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
     fontScaleSlider:SetPoint("TOPLEFT", alphaSlider, "BOTTOMLEFT", 0, -36)
-    fontScaleSlider:SetWidth(376)
+    fontScaleSlider:SetWidth(420)
     fontScaleSlider:SetMinMaxValues(0.70, 1.60)
     fontScaleSlider:SetValueStep(0.01)
     styleSlider(fontScaleSlider, "Font Scale", 0.70, 1.60)
@@ -822,7 +875,7 @@ function ns:BuildOptionsUI()
 
     local presetDrop = makeDropdown(profiles, "Theme Preset", PRESET_OPTIONS, "TOPLEFT", profiles, "TOPLEFT", 12, -28, function() end)
     label(profiles, "Export Profile", "GameFontNormalSmall", "TOPLEFT", presetDrop, "BOTTOMLEFT", 0, -10)
-    local exportBox = makeInput(profiles, 378, "TOPLEFT", presetDrop, "BOTTOMLEFT", 0, -30)
+    local exportBox = makeInput(profiles, 420, "TOPLEFT", presetDrop, "BOTTOMLEFT", 0, -30)
     exportBox:SetScript("OnEditFocusGained", function(edit)
         edit:HighlightText()
     end)
@@ -840,7 +893,7 @@ function ns:BuildOptionsUI()
     end)
 
     label(profiles, "Import Profile", "GameFontNormalSmall", "TOPLEFT", generateExportButton, "BOTTOMLEFT", 0, -10)
-    local importBox = makeInput(profiles, 378, "TOPLEFT", generateExportButton, "BOTTOMLEFT", 0, -30)
+    local importBox = makeInput(profiles, 420, "TOPLEFT", generateExportButton, "BOTTOMLEFT", 0, -30)
     importBox:SetScript("OnEnterPressed", function(edit)
         edit:ClearFocus()
         local ok, msg = applyImportString(edit:GetText())
@@ -923,6 +976,8 @@ function ns:BuildOptionsUI()
     frame.lockCheck = lockCheck
     frame.showUnlockedCheck = showUnlockedCheck
     frame.showBestTimedComparisonCheck = showBestTimedComparisonCheck
+    frame.showPaceHintsCheck = showPaceHintsCheck
+    frame.previewScenarioDrop = previewScenarioDrop
     frame.useClassColorCheck = useClassColorCheck
     frame.widthSlider = widthSlider
     frame.heightSlider = heightSlider

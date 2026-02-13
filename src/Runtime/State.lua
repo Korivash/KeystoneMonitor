@@ -14,6 +14,7 @@ local function newRuntimeState()
         level = 0,
         affixIDs = {},
         affixes = {},
+        weeklyAffixIDs = {},
         weeklyAffixes = {},
         deathCount = 0,
         deathPenalty = 0,
@@ -24,6 +25,7 @@ local function newRuntimeState()
 end
 
 function ns:RefreshWeeklyAffixes()
+    wipe(self.state.weeklyAffixIDs)
     wipe(self.state.weeklyAffixes)
 
     local affixIDs = {}
@@ -35,6 +37,7 @@ function ns:RefreshWeeklyAffixes()
                 local entry = currentAffixes[i]
                 if entry and entry.id then
                     affixIDs[#affixIDs + 1] = entry.id
+                    self.state.weeklyAffixIDs[#self.state.weeklyAffixIDs + 1] = entry.id
                 end
             end
         end
@@ -45,6 +48,7 @@ function ns:RefreshWeeklyAffixes()
         if activeAffixIDs then
             for i = 1, #activeAffixIDs do
                 affixIDs[#affixIDs + 1] = activeAffixIDs[i]
+                self.state.weeklyAffixIDs[#self.state.weeklyAffixIDs + 1] = activeAffixIDs[i]
             end
         end
     end
@@ -135,15 +139,20 @@ end
 
 function ns:GetActiveAffixDisplayData()
     local items = {}
-    if not self.state.affixIDs or #self.state.affixIDs == 0 then
-        return items
-    end
     if not C_ChallengeMode or not C_ChallengeMode.GetAffixInfo then
         return items
     end
 
-    for i = 1, #self.state.affixIDs do
-        local affixID = self.state.affixIDs[i]
+    local sourceIDs = self.state.affixIDs
+    if not sourceIDs or #sourceIDs == 0 then
+        sourceIDs = self.state.weeklyAffixIDs
+    end
+    if not sourceIDs or #sourceIDs == 0 then
+        return items
+    end
+
+    for i = 1, #sourceIDs do
+        local affixID = sourceIDs[i]
         local name, description, fileDataID = C_ChallengeMode.GetAffixInfo(affixID)
         items[#items + 1] = {
             id = affixID,

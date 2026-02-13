@@ -16,7 +16,7 @@ Most M+ trackers are either too noisy or too rigid. Keystone Monitor aims to sta
 - Objective completion tracking
 - Boss-style completion markers for forces and objectives (`[ ]` / `[Done]`)
 - Dungeon PB summary tracking
-- Active affix icons with hover tooltips
+- Active affix icons with hover tooltips (current keystone with weekly fallback)
 - Unlockable/lockable draggable tracker
 - `/km` UI Studio with advanced customization
 
@@ -26,6 +26,7 @@ Most M+ trackers are either too noisy or too rigid. Keystone Monitor aims to sta
 - The tracker keeps completed run data until you leave the Mythic+ instance.
 - Completion status text (`COMPLETED` / `COMPLETED (Timed)`) is shown below the deaths/penalty row.
 - Objective rows automatically hide when vertical space is limited so text stays inside the frame.
+- Frame opacity controls only the panel background/border, not text/icon visibility.
 
 ## UI Studio (`/km`)
 
@@ -40,9 +41,15 @@ Open with:
 - Lock tracker position
 - Show tracker while unlocked
 - Class-color accent toggle
+- Pace hint status toggle (`PACE: +3/+2/+1/Overtime`)
+- Preview Scenario selector:
+  - Live Data
+  - Simulated In-Progress
+  - Floodgate Completed
 
 ### Layout
 
+- Centered two-column studio layout with expanded spacing to prevent overlap
 - Frame width
 - Frame height
 - Frame scale

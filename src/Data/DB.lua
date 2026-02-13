@@ -5,6 +5,9 @@ local defaults = {
         locked = true,
         showWhenUnlocked = true,
         showBestTimedComparison = true,
+        showPaceHints = true,
+        previewScenario = "LIVE",
+        useFloodgateCompletedPreview = false,
         position = {
             x = 0,
             y = 120,
@@ -35,4 +38,9 @@ function ns:InitDB()
     KeystoneMonitorDB = KeystoneMonitorDB or {}
     self:MergeDefaults(KeystoneMonitorDB, defaults)
     self.db = KeystoneMonitorDB
+
+    local profile = self.db.profile
+    if profile and profile.useFloodgateCompletedPreview and profile.previewScenario == "LIVE" then
+        profile.previewScenario = "FLOODGATE_COMPLETED"
+    end
 end

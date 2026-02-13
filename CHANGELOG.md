@@ -6,6 +6,29 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-13
+
+### Added
+
+- Advanced preview scenarios in `/km` Behavior (`Live Data`, `Simulated In-Progress`, `Floodgate Completed`).
+- Tracker pace hint status line (`PACE: +3/+2/+1/Overtime`) with toggle control in `/km`.
+
+### Changed
+
+- Upgraded `/km` UI Studio layout to a centered two-column composition with expanded spacing and section reflow to reduce overlap risk.
+- Expanded Behavior controls with preview scenario selection and pace-hint settings for richer styling workflows.
+- Repositioned and centered PB/Best Timed block in the tracker to improve readability and avoid overlap.
+- Completion status text now stays below deaths/penalty for clearer post-run status visibility.
+- Final run snapshot remains visible after dungeon completion and only clears after leaving the Mythic+ instance.
+- Forces row now uses objective-style completion markers (`[ ]` and `[Done]`).
+- Objective rows now auto-cap to available vertical space to avoid text clipping/overflow at smaller heights.
+
+### Fixed
+
+- Frame opacity now targets only panel chrome (background + border), leaving tracker text/icons fully opaque.
+- Opacity slider/import now supports true `0.00` minimum for fully transparent panel backgrounds.
+- Affix icons now show active keystone affixes when available and fall back to weekly affix IDs when no active key data exists.
+
 ## [0.2.1] - 2026-02-13
 
 ### Added
