@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-02-13
+
 ### Added
 
 - Affix icon row with tooltips in the main tracker.
@@ -19,6 +21,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Expanded and reflowed UI Studio layout for improved readability.
 - Actions bar anchored and centered for cleaner composition.
 - Enhanced rendering pipeline to support broader appearance customization.
+- Preserved final run stats on tracker after `CHALLENGE_MODE_COMPLETED`; state now clears when leaving the dungeon instance.
+- Moved completion status text (`COMPLETED` / `COMPLETED (Timed)`) below deaths/penalty for improved readability.
+- Updated forces display to use boss-style completion markers (`[ ]` in progress, `[Done]` at 100%).
+- Added objective-row fit capping so rows hide when space is limited, preventing overflow at smaller frame sizes or larger font scales.
 
 ## [0.1.0] - 2026-02-13
 

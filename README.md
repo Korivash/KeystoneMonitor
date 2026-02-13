@@ -14,10 +14,18 @@ Most M+ trackers are either too noisy or too rigid. Keystone Monitor aims to sta
 - Enemy forces progress + percentage
 - Death counter + death penalty time
 - Objective completion tracking
+- Boss-style completion markers for forces and objectives (`[ ]` / `[Done]`)
 - Dungeon PB summary tracking
 - Active affix icons with hover tooltips
 - Unlockable/lockable draggable tracker
 - `/km` UI Studio with advanced customization
+
+## Run Completion Behavior
+
+- On dungeon completion, final run stats remain visible on the tracker.
+- The tracker keeps completed run data until you leave the Mythic+ instance.
+- Completion status text (`COMPLETED` / `COMPLETED (Timed)`) is shown below the deaths/penalty row.
+- Objective rows automatically hide when vertical space is limited so text stays inside the frame.
 
 ## UI Studio (`/km`)
 

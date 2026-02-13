@@ -206,18 +206,43 @@ function ns:Render()
     if total > 0 then
         local pct = math.min(1, math.max(0, current / total))
         self.ui.forcesBar:SetValue(pct)
-        self.ui.forcesText:SetText(string.format("Forces %d / %d (%.1f%%)", current, total, pct * 100))
+        if pct >= 1 then
+            self.ui.forcesText:SetText(string.format("|cff7CFC00[Done]|r Forces %d / %d (100.0%%)", total, total))
+        else
+            self.ui.forcesText:SetText(string.format("|cffBFBFBF[ ]|r Forces %d / %d (%.1f%%)", current, total, pct * 100))
+        end
     else
         self.ui.forcesBar:SetValue(0)
-        self.ui.forcesText:SetText("Forces 0 / 0 (0.0%)")
+        self.ui.forcesText:SetText("|cffBFBFBF[ ]|r Forces 0 / 0 (0.0%)")
     end
 
     self.ui.deaths:SetText(string.format("Deaths %d  |  Penalty %s", self.state.deathCount, self:FormatTime(self.state.deathPenalty)))
 
+    local maxObjectiveRows = #self.ui.objectiveRows
+    local firstRow = self.ui.objectiveRows[1]
+    local rootBottom = self.ui.root:GetBottom()
+    if firstRow and rootBottom then
+        local firstTop = firstRow:GetTop()
+        if firstTop then
+            local sampleHeight = math.max(10, firstRow:GetStringHeight())
+            local rowStride = sampleHeight + 4
+            local available = firstTop - (rootBottom + 8)
+            maxObjectiveRows = math.floor(available / rowStride) + 1
+            if maxObjectiveRows < 0 then
+                maxObjectiveRows = 0
+            end
+            if maxObjectiveRows > #self.ui.objectiveRows then
+                maxObjectiveRows = #self.ui.objectiveRows
+            end
+        end
+    end
+
     for i = 1, #self.ui.objectiveRows do
         local row = self.ui.objectiveRows[i]
         local objective = self.state.objectives[i]
-        if objective then
+        if i > maxObjectiveRows then
+            row:Hide()
+        elseif objective then
             row:Show()
             if objective.completed then
                 row:SetText(string.format("|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r", objective.text, self:FormatTime(objective.doneAt or self.state.elapsed)))
@@ -275,11 +300,6 @@ function ns:BuildUI()
     chest2:SetPoint("TOPLEFT", chest3, "BOTTOMLEFT", 0, -3)
     local chest1 = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     chest1:SetPoint("TOPLEFT", chest2, "BOTTOMLEFT", 0, -3)
-
-    local statusText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    statusText:SetPoint("BOTTOMLEFT", chest1, "TOPLEFT", 0, 2)
-    statusText:SetPoint("RIGHT", root, "RIGHT", -10, 0)
-    statusText:SetJustifyH("LEFT")
 
     local recordText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     recordText:SetPoint("TOPLEFT", timer, "BOTTOMLEFT", 0, -2)
@@ -353,11 +373,17 @@ function ns:BuildUI()
     deaths:SetPoint("TOPRIGHT", root, "TOPRIGHT", -10, -92)
     deaths:SetJustifyH("LEFT")
 
+    local statusText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    statusText:SetPoint("TOPLEFT", deaths, "BOTTOMLEFT", 0, -4)
+    statusText:SetPoint("TOPRIGHT", deaths, "BOTTOMRIGHT", 0, -4)
+    statusText:SetJustifyH("LEFT")
+    statusText:SetWordWrap(false)
+
     local objectiveRows = {}
     for i = 1, 6 do
         local row = root:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         if i == 1 then
-            row:SetPoint("TOPLEFT", deaths, "BOTTOMLEFT", 0, -8)
+            row:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -6)
         else
             row:SetPoint("TOPLEFT", objectiveRows[i - 1], "BOTTOMLEFT", 0, -4)
         end
