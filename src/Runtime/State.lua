@@ -233,7 +233,12 @@ function ns:HandleChallengeCompleted()
         end
     end
 
-    self:RefreshChallengeData()
+    -- Preserve the final in-run snapshot on the UI after completion.
+    -- Some challenge APIs clear immediately and would zero out stats if re-polled here.
+    if self.state.completionTimeMs then
+        self.state.elapsed = (tonumber(self.state.completionTimeMs) or 0) / 1000
+        self.state.timerStarted = true
+    end
     self:RecordRunSplits()
 end
 
