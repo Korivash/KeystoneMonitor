@@ -114,6 +114,7 @@ local PRESET_OPTIONS = {
 local EXPORT_FIELDS = {
     "locked",
     "showWhenUnlocked",
+    "showBestTimedComparison",
     "scale",
     "alpha",
     "useClassColor",
@@ -352,6 +353,7 @@ local function buildExportString()
     local values = {
         locked = profile.locked and "1" or "0",
         showWhenUnlocked = profile.showWhenUnlocked and "1" or "0",
+        showBestTimedComparison = profile.showBestTimedComparison and "1" or "0",
         scale = string.format("%.2f", profile.scale or 1),
         alpha = string.format("%.2f", profile.alpha or 1),
         useClassColor = appearance.useClassColor and "1" or "0",
@@ -413,6 +415,9 @@ local function applyImportString(serialized)
     end
     if map.showWhenUnlocked then
         profile.showWhenUnlocked = map.showWhenUnlocked ~= "0"
+    end
+    if map.showBestTimedComparison then
+        profile.showBestTimedComparison = map.showBestTimedComparison ~= "0"
     end
     if map.scale then
         profile.scale = clamp(tonumber(map.scale) or profile.scale or 1, 0.70, 1.80)
@@ -576,6 +581,7 @@ function ns:RefreshOptionsUI()
 
     frame.lockCheck:SetChecked(profile.locked and true or false)
     frame.showUnlockedCheck:SetChecked(profile.showWhenUnlocked and true or false)
+    frame.showBestTimedComparisonCheck:SetChecked(profile.showBestTimedComparison and true or false)
     frame.useClassColorCheck:SetChecked(appearance.useClassColor and true or false)
 
     frame.widthSlider:SetValue(appearance.frameWidth or 350)
@@ -663,7 +669,7 @@ function ns:BuildOptionsUI()
     local sub = label(header, "Profiles, presets, and deep skinning", "GameFontHighlightSmall", "TOPLEFT", header, "TOPLEFT", 14, -27)
     sub:SetTextColor(0.67, 0.76, 0.86)
 
-    local behavior = section(frame, "Behavior", "TOPLEFT", header, "BOTTOMLEFT", 12, -18, 404, 124)
+    local behavior = section(frame, "Behavior", "TOPLEFT", header, "BOTTOMLEFT", 12, -18, 404, 150)
     local layout = section(frame, "Layout & Sizing", "TOPRIGHT", header, "BOTTOMRIGHT", -12, -18, 404, 300)
     local fonts = section(frame, "Per-Element Fonts", "TOPLEFT", behavior, "BOTTOMLEFT", 0, -10, 404, 160)
 
@@ -699,8 +705,16 @@ function ns:BuildOptionsUI()
         ns:Render()
     end)
 
+    local showBestTimedComparisonCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
+    showBestTimedComparisonCheck:SetPoint("TOPLEFT", showUnlockedCheck, "BOTTOMLEFT", 0, -10)
+    showBestTimedComparisonCheck.Text:SetText("Show best timed vs current")
+    showBestTimedComparisonCheck:SetScript("OnClick", function(button)
+        ns.db.profile.showBestTimedComparison = button:GetChecked() and true or false
+        ns:Render()
+    end)
+
     local useClassColorCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
-    useClassColorCheck:SetPoint("TOPLEFT", showUnlockedCheck, "BOTTOMLEFT", 0, -10)
+    useClassColorCheck:SetPoint("TOPLEFT", showBestTimedComparisonCheck, "BOTTOMLEFT", 0, -10)
     useClassColorCheck.Text:SetText("Use class color for accent")
     useClassColorCheck:SetScript("OnClick", function(button)
         ns.db.profile.appearance.useClassColor = button:GetChecked() and true or false
@@ -908,6 +922,7 @@ function ns:BuildOptionsUI()
     self.ui.options = frame
     frame.lockCheck = lockCheck
     frame.showUnlockedCheck = showUnlockedCheck
+    frame.showBestTimedComparisonCheck = showBestTimedComparisonCheck
     frame.useClassColorCheck = useClassColorCheck
     frame.widthSlider = widthSlider
     frame.heightSlider = heightSlider

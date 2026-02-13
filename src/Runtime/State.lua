@@ -70,9 +70,7 @@ function ns:ResetRuntimeState()
 end
 
 function ns:IsChallengeActive()
-    local _, _, difficultyID = GetInstanceInfo()
-    local isMythicPlus = difficultyID == 8 or difficultyID == 23
-    if not isMythicPlus then
+    if not self:IsInMythicPlusInstance() then
         return false
     end
 
@@ -82,6 +80,12 @@ function ns:IsChallengeActive()
 
     local mapID = C_ChallengeMode.GetActiveChallengeMapID()
     return mapID and mapID > 0
+end
+
+function ns:IsInMythicPlusInstance()
+    local _, instanceType, difficultyID = GetInstanceInfo()
+    local isMythicPlus = difficultyID == 8 or difficultyID == 23
+    return instanceType == "party" and isMythicPlus
 end
 
 function ns:RefreshChallengeData()

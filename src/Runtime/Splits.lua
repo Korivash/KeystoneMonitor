@@ -62,3 +62,51 @@ function ns:GetRecordSummary()
     return table.concat(parts, "  |  ")
 end
 
+function ns:GetBestTimedMs()
+    if not self.state.mapID then
+        return nil
+    end
+
+    local entry = self.db.records[tostring(self.state.mapID)]
+    if not entry then
+        return nil
+    end
+    return tonumber(entry.bestOnTimeMs)
+end
+
+function ns:GetBestTimedComparisonSummary()
+    if not self.db.profile.showBestTimedComparison then
+        return nil
+    end
+    if not self.state.inChallenge then
+        return nil
+    end
+
+    local bestTimedMs = self:GetBestTimedMs()
+    if not bestTimedMs then
+        return nil
+    end
+
+    local currentMs = nil
+    if self.state.challengeCompleted and self.state.completionTimeMs then
+        currentMs = tonumber(self.state.completionTimeMs)
+    else
+        currentMs = (tonumber(self.state.elapsed) or 0) * 1000
+    end
+    if not currentMs then
+        return nil
+    end
+
+    local delta = currentMs - bestTimedMs
+    local deltaPrefix = delta >= 0 and "+" or "-"
+    local deltaText = self:FormatTime(math.abs(delta) / 1000)
+
+    return string.format(
+        "Best Timed %s  |  Current %s  |  Delta %s%s",
+        self:FormatTime(bestTimedMs / 1000),
+        self:FormatTime(currentMs / 1000),
+        deltaPrefix,
+        deltaText
+    )
+end
+

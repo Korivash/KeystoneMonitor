@@ -4,6 +4,7 @@ local defaults = {
     profile = {
         locked = true,
         showWhenUnlocked = true,
+        showBestTimedComparison = true,
         position = {
             x = 0,
             y = 120,

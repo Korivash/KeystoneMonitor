@@ -26,6 +26,14 @@ function ns:SyncChallengeState(forceFull)
 
     local wasInChallenge = self.state.inChallenge
     local nowInChallenge = self:IsChallengeActive()
+    local insideMythicPlusInstance = self:IsInMythicPlusInstance()
+
+    if not nowInChallenge and self.state.challengeCompleted and insideMythicPlusInstance then
+        self.state.inChallenge = true
+        self:RefreshVisibility()
+        self:Render()
+        return
+    end
 
     if not nowInChallenge and (wasInChallenge or forceFull) then
         self:StopTicker()

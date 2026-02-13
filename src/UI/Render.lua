@@ -86,6 +86,7 @@ function ns:ApplyTheme()
     self.ui.accent:SetColorTexture(accentR, accentG, accentB, accentA)
     self.ui.timer:SetTextColor(timerR, timerG, timerB, timerA)
     self.ui.title:SetTextColor(accentR, accentG, accentB, accentA)
+    self.ui.statusText:SetTextColor(textR, textG, textB, textA)
     self.ui.recordText:SetTextColor(textR, textG, textB, textA)
     self.ui.chest3:SetTextColor(textR, textG, textB, textA)
     self.ui.chest2:SetTextColor(textR, textG, textB, textA)
@@ -132,6 +133,7 @@ function ns:ApplyFrameSettings()
     setFontScale(self.ui.chest3, 12, bodyFont)
     setFontScale(self.ui.chest2, 12, bodyFont)
     setFontScale(self.ui.chest1, 12, bodyFont)
+    setFontScale(self.ui.statusText, 11, bodyFont)
     setFontScale(self.ui.recordText, 12, bodyFont)
     setFontScale(self.ui.forcesText, 12, bodyFont)
     setFontScale(self.ui.deaths, 14, bodyFont)
@@ -170,7 +172,22 @@ function ns:Render()
     self.ui.timer:SetText(self:FormatTime(self.state.elapsed))
 
     local recordSummary = self:GetRecordSummary()
-    self.ui.recordText:SetText(recordSummary or "")
+    local comparisonSummary = self:GetBestTimedComparisonSummary()
+    if recordSummary and comparisonSummary then
+        self.ui.recordText:SetText(recordSummary .. "\n" .. comparisonSummary)
+    else
+        self.ui.recordText:SetText(recordSummary or comparisonSummary or "")
+    end
+
+    if self.state.challengeCompleted then
+        if self.state.completedOnTime then
+            self.ui.statusText:SetText("|cff7CFC00COMPLETED (Timed)|r")
+        else
+            self.ui.statusText:SetText("|cffFF9966COMPLETED|r")
+        end
+    else
+        self.ui.statusText:SetText("")
+    end
     updateAffixIcons()
 
     local limit = tonumber(self.state.timeLimit) or 0
@@ -258,6 +275,11 @@ function ns:BuildUI()
     chest2:SetPoint("TOPLEFT", chest3, "BOTTOMLEFT", 0, -3)
     local chest1 = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     chest1:SetPoint("TOPLEFT", chest2, "BOTTOMLEFT", 0, -3)
+
+    local statusText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    statusText:SetPoint("BOTTOMLEFT", chest1, "TOPLEFT", 0, 2)
+    statusText:SetPoint("RIGHT", root, "RIGHT", -10, 0)
+    statusText:SetJustifyH("LEFT")
 
     local recordText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     recordText:SetPoint("TOPLEFT", timer, "BOTTOMLEFT", 0, -2)
@@ -352,6 +374,7 @@ function ns:BuildUI()
     self.ui.chest3 = chest3
     self.ui.chest2 = chest2
     self.ui.chest1 = chest1
+    self.ui.statusText = statusText
     self.ui.recordText = recordText
     self.ui.affixRow = affixRow
     self.ui.affixIcons = affixIcons
