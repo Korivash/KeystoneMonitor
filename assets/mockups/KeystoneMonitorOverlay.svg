@@ -62,7 +62,7 @@
     <rect class="panel" x="0" y="0" rx="18" ry="18" width="1160" height="840"/>
     <rect x="0" y="0" rx="18" ry="18" width="1160" height="840" fill="none" stroke="#42d4ff" stroke-opacity="0.25" stroke-width="1.2" filter="url(#blueOuterGlow)"/>
 
-    <text class="title" x="44" y="70">MIDNIGHT+ Mythic+ Progress</text>
+    <text class="title" x="44" y="70">Keystone Monitor Mythic+ Progress</text>
 
     <g transform="translate(44,112)">
       <rect class="panel" x="0" y="0" rx="14" ry="14" width="520" height="180"/>

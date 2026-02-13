@@ -27,6 +27,6 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - Initial addon runtime for Mythic+ session tracking.
 - Timer, deaths, objective, and forces tracking.
 - PB summary storage per dungeon map.
-- Slash command support (`/km`, `/midnight`, `/mplus`).
+- Slash command support (`/km`, `/keystonemonitor`, `/mplus`).
 - Customizable options menu with live preview mode.
 - Draggable tracker behavior with lock/unlock support.

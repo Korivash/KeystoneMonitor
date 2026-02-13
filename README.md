@@ -1,4 +1,4 @@
-# Midnight Mythic Plus
+# Keystone Monitor
 
 A modern Mythic+ tracker addon for World of Warcraft, focused on clarity during runs and deep UI customization outside runs.
 
@@ -6,7 +6,7 @@ Created by **Korivash**.
 
 ## Why This Addon
 
-Most M+ trackers are either too noisy or too rigid. Midnight Mythic Plus aims to stay compact in combat while still giving players full control over layout, colors, fonts, and profile sharing.
+Most M+ trackers are either too noisy or too rigid. Keystone Monitor aims to stay compact in combat while still giving players full control over layout, colors, fonts, and profile sharing.
 
 ## Core Features
 
@@ -75,7 +75,7 @@ Important:
 
 Aliases:
 
-- `/midnight`
+- `/keystonemonitor`
 - `/mplus`
 
 ## Installation
@@ -83,7 +83,7 @@ Aliases:
 ### Manual
 
 1. Place this folder in:
-   `World of Warcraft/_retail_/Interface/AddOns/MidnightMythicPlus`
+   `World of Warcraft/_retail_/Interface/AddOns/KeystoneMonitor`
 2. Launch or restart WoW.
 3. Run `/reload`.
 
@@ -99,7 +99,7 @@ Aliases:
 ## Project Structure
 
 ```text
-MidnightMythicPlus/
+KeystoneMonitor/
   src/
     Core/        # boot + shared utilities
     Data/        # saved variable defaults
@@ -110,9 +110,9 @@ MidnightMythicPlus/
 
 ## Development Notes
 
-- SavedVariables: `MidnightDB`
-- Primary entry point: `MidnightMythicPlus.toc`
-- Addon namespace exposed as `_G.Midnight`
+- SavedVariables: `KeystoneMonitorDB`
+- Primary entry point: `KeystoneMonitor.toc`
+- Addon namespace exposed as `_G.KeystoneMonitor`
 
 ## Documentation
 

@@ -1,10 +1,10 @@
 ## Interface: 120001, 120000
-## Title: Mythic+ Progress & Boss Tracker  Midnight
+## Title: Mythic+ Progress & Boss Tracker  Keystone Monitor
 ## Notes: Compact class-colored Mythic+ tracker with full runtime modules.
 ## Author: Korivash
 ## Version: 0.1.0
-## IconTexture: Interface\AddOns\MidnightMythicPlus\addon_icon
-## SavedVariables: MidnightDB
+## IconTexture: Interface\AddOns\KeystoneMonitor\addon_icon
+## SavedVariables: KeystoneMonitorDB
 ## Category-enUS: Mythic+ Dungeons
 
 src/Core/Core.lua
@@ -17,4 +17,4 @@ src/UI/Options.lua
 src/Runtime/Timer.lua
 src/Runtime/Events.lua
 src/UI/Commands.lua
-MidnightMythicPlus.lua
+KeystoneMonitor.lua

@@ -31,7 +31,7 @@ local defaults = {
 }
 
 function ns:InitDB()
-    MidnightDB = MidnightDB or {}
-    self:MergeDefaults(MidnightDB, defaults)
-    self.db = MidnightDB
+    KeystoneMonitorDB = KeystoneMonitorDB or {}
+    self:MergeDefaults(KeystoneMonitorDB, defaults)
+    self.db = KeystoneMonitorDB
 end

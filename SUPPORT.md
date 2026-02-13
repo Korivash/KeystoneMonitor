@@ -18,7 +18,7 @@ Please include:
 ## Common Troubleshooting
 
 - Run `/reload` after updates.
-- Ensure folder name is exactly `MidnightMythicPlus`.
+- Ensure folder name is exactly `KeystoneMonitor`.
 - If addon appears out of date after a patch, enable "Load out of date AddOns" temporarily.
 - Reset position with `/km reset` if tracker appears off-screen.
 

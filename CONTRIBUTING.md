@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest in contributing to Midnight Mythic Plus.
+Thanks for your interest in contributing to Keystone Monitor.
 
 ## Before You Start
 
@@ -11,7 +11,7 @@ Thanks for your interest in contributing to Midnight Mythic Plus.
 ## Development Setup
 
 1. Clone this repository into your WoW AddOns folder:
-   `World of Warcraft/_retail_/Interface/AddOns/MidnightMythicPlus`
+   `World of Warcraft/_retail_/Interface/AddOns/KeystoneMonitor`
 2. Launch WoW and enable the addon.
 3. Use `/reload` frequently during iteration.
 
@@ -20,7 +20,7 @@ Thanks for your interest in contributing to Midnight Mythic Plus.
 - Keep Lua code modular by feature area (`Core`, `Runtime`, `UI`, `Data`).
 - Favor readable logic over clever shorthand.
 - Avoid hardcoding text or styling in multiple places when shared config exists.
-- Preserve saved variable compatibility when evolving `MidnightDB`.
+- Preserve saved variable compatibility when evolving `KeystoneMonitorDB`.
 
 ## UI Changes
 

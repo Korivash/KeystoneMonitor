@@ -22,8 +22,8 @@ local FONT_OPTIONS = {
 
 local PRESET_OPTIONS = {
     {
-        key = "MIDNIGHT",
-        name = "Midnight Default",
+        key = "KEYSTONE",
+        name = "Keystone Monitor Default",
         scale = 1.0,
         alpha = 1.0,
         appearance = {
@@ -587,7 +587,7 @@ function ns:RefreshOptionsUI()
     dropdownSetValue(frame.titleFontDrop.dropdown, FONT_OPTIONS, appearance.titleFont or "FRIZQT")
     dropdownSetValue(frame.timerFontDrop.dropdown, FONT_OPTIONS, appearance.timerFont or "ARIALN")
     dropdownSetValue(frame.bodyFontDrop.dropdown, FONT_OPTIONS, appearance.bodyFont or "FRIZQT")
-    dropdownSetValue(frame.presetDrop.dropdown, PRESET_OPTIONS, "MIDNIGHT")
+    dropdownSetValue(frame.presetDrop.dropdown, PRESET_OPTIONS, "KEYSTONE")
 
     for i = 1, #COLOR_KEYS do
         local entry = COLOR_KEYS[i]
@@ -614,7 +614,7 @@ function ns:ToggleOptionsUI()
 end
 
 function ns:BuildOptionsUI()
-    local frame = CreateFrame("Frame", "MidnightOptionsFrame", UIParent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", "KeystoneMonitorOptionsFrame", UIParent, "BackdropTemplate")
     frame:SetSize(860, 860)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
@@ -659,7 +659,7 @@ function ns:BuildOptionsUI()
     accent:SetHeight(2)
     accent:SetColorTexture(0.33, 0.73, 1.00, 0.95)
 
-    label(header, "MIDNIGHT MYTHIC PLUS UI STUDIO", "GameFontNormalLarge", "TOPLEFT", header, "TOPLEFT", 14, -10)
+    label(header, "Keystone Monitor UI STUDIO", "GameFontNormalLarge", "TOPLEFT", header, "TOPLEFT", 14, -10)
     local sub = label(header, "Profiles, presets, and deep skinning", "GameFontHighlightSmall", "TOPLEFT", header, "TOPLEFT", 14, -27)
     sub:SetTextColor(0.67, 0.76, 0.86)
 
@@ -892,7 +892,7 @@ function ns:BuildOptionsUI()
     applyPresetButton:SetText("Apply Preset")
     styleButton(applyPresetButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
     applyPresetButton:SetScript("OnClick", function()
-        local selected = UIDropDownMenu_GetSelectedValue(presetDrop.dropdown) or "MIDNIGHT"
+        local selected = UIDropDownMenu_GetSelectedValue(presetDrop.dropdown) or "KEYSTONE"
         applyPreset(selected)
     end)
 

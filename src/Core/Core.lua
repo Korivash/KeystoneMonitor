@@ -1,14 +1,14 @@
 local addonName, ns = ...
 
 ns.addonName = addonName
-ns.frame = CreateFrame("Frame", "MidnightEventFrame")
+ns.frame = CreateFrame("Frame", "KeystoneMonitorEventFrame")
 ns.state = {}
 ns.ui = {}
 
-_G.Midnight = ns
+_G.KeystoneMonitor = ns
 
 function ns:Print(msg)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff6cc6ffMidnight|r " .. tostring(msg))
+    DEFAULT_CHAT_FRAME:AddMessage("|cff6cc6ffKeystone Monitor|r " .. tostring(msg))
 end
 
 function ns:Initialize()

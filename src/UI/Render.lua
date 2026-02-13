@@ -214,7 +214,7 @@ function ns:Render()
 end
 
 function ns:BuildUI()
-    local root = CreateFrame("Frame", "MidnightFrame", UIParent, "BackdropTemplate")
+    local root = CreateFrame("Frame", "KeystoneMonitorFrame", UIParent, "BackdropTemplate")
     root:SetSize(350, 248)
     root:SetFrameStrata("HIGH")
     root:SetClampedToScreen(true)

@@ -1,11 +1,11 @@
 local _, ns = ...
 
 function ns:RegisterSlashCommands()
-    SLASH_MIDNIGHT1 = "/midnight"
-    SLASH_MIDNIGHT2 = "/mplus"
-    SLASH_MIDNIGHT3 = "/km"
+    SLASH_KEYSTONEMONITOR1 = "/keystonemonitor"
+    SLASH_KEYSTONEMONITOR2 = "/mplus"
+    SLASH_KEYSTONEMONITOR3 = "/km"
 
-    SlashCmdList.MIDNIGHT = function(message)
+    SlashCmdList.KEYSTONEMONITOR = function(message)
         local cmd = self:Trim((message or ""):lower())
 
         if cmd == "" or cmd == "menu" or cmd == "config" or cmd == "options" or cmd == "open" then
