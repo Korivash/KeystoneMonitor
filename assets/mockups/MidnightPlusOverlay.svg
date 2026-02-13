@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="edgeGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1bc8ff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#0a75d8" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="progressFill" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22dcff"/>
+      <stop offset="100%" stop-color="#2f7dff"/>
+    </linearGradient>
+    <linearGradient id="hpFill" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2be6ff"/>
+      <stop offset="100%" stop-color="#1c8bff"/>
+    </linearGradient>
+    <filter id="blueOuterGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <style>
+      .panel {
+        fill: rgba(7, 14, 24, 0.56);
+        stroke: url(#edgeGlow);
+        stroke-width: 2;
+      }
+      .title {
+        font-family: "Orbitron", "Eurostile", "Segoe UI", sans-serif;
+        font-weight: 700;
+        font-size: 42px;
+        letter-spacing: 1.8px;
+        fill: #dff8ff;
+      }
+      .label {
+        font-family: "Rajdhani", "Segoe UI", sans-serif;
+        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: 0.6px;
+        fill: #9fd5ef;
+      }
+      .value {
+        font-family: "Orbitron", "Rajdhani", sans-serif;
+        font-weight: 700;
+        fill: #e8fbff;
+      }
+      .body {
+        font-family: "Rajdhani", "Segoe UI", sans-serif;
+        font-size: 20px;
+        fill: #d4ecff;
+      }
+      .muted {
+        fill: #7ea5c4;
+      }
+      .ok {
+        fill: #6cfeb9;
+      }
+    </style>
+  </defs>
+
+  <g transform="translate(220,80)">
+    <rect class="panel" x="0" y="0" rx="18" ry="18" width="1160" height="840"/>
+    <rect x="0" y="0" rx="18" ry="18" width="1160" height="840" fill="none" stroke="#42d4ff" stroke-opacity="0.25" stroke-width="1.2" filter="url(#blueOuterGlow)"/>
+
+    <text class="title" x="44" y="70">MIDNIGHT+ Mythic+ Progress</text>
+
+    <g transform="translate(44,112)">
+      <rect class="panel" x="0" y="0" rx="14" ry="14" width="520" height="180"/>
+      <text class="label" x="26" y="44">MYTHIC+ TIMER</text>
+      <text class="value" x="24" y="124" font-size="84" filter="url(#blueOuterGlow)">23:15</text>
+      <rect x="24" y="142" width="472" height="4" fill="#1e5f92" fill-opacity="0.65"/>
+      <rect x="24" y="142" width="275" height="4" fill="#39dbff"/>
+    </g>
+
+    <g transform="translate(596,112)">
+      <rect class="panel" x="0" y="0" rx="14" ry="14" width="520" height="180"/>
+      <text class="label" x="26" y="44">DUNGEON PROGRESS</text>
+      <rect x="26" y="78" width="468" height="30" rx="15" fill="#0c1726" stroke="#24517e" stroke-width="1"/>
+      <rect x="26" y="78" width="355" height="30" rx="15" fill="url(#progressFill)" filter="url(#blueOuterGlow)"/>
+      <text class="value" x="392" y="101" font-size="26">75.8%</text>
+      <text class="body muted" x="26" y="146">Enemy Forces Cleared</text>
+    </g>
+
+    <g transform="translate(44,324)">
+      <rect class="panel" x="0" y="0" rx="14" ry="14" width="760" height="474"/>
+      <text class="label" x="26" y="42">BOSS STATUS</text>
+
+      <g transform="translate(26,76)">
+        <text class="body" x="0" y="22">Chronolord Vex</text>
+        <rect x="260" y="4" width="420" height="24" rx="12" fill="#0d1827" stroke="#2c4f70" stroke-width="1"/>
+        <rect x="260" y="4" width="0" height="24" rx="12" fill="url(#hpFill)"/>
+        <text class="body ok" x="700" y="23">&#10003;</text>
+        <text class="body muted" x="725" y="23">Defeated</text>
+      </g>
+
+      <g transform="translate(26,148)">
+        <text class="body" x="0" y="22">Nullwarden Talis</text>
+        <rect x="260" y="4" width="420" height="24" rx="12" fill="#0d1827" stroke="#2c4f70" stroke-width="1"/>
+        <rect x="260" y="4" width="243" height="24" rx="12" fill="url(#hpFill)"/>
+        <text class="body" x="700" y="23">42%</text>
+      </g>
+
+      <g transform="translate(26,220)">
+        <text class="body" x="0" y="22">Abyssal Matron Yra</text>
+        <rect x="260" y="4" width="420" height="24" rx="12" fill="#0d1827" stroke="#2c4f70" stroke-width="1"/>
+        <rect x="260" y="4" width="0" height="24" rx="12" fill="url(#hpFill)"/>
+        <text class="body ok" x="700" y="23">&#10003;</text>
+        <text class="body muted" x="725" y="23">Defeated</text>
+      </g>
+
+      <g transform="translate(26,292)">
+        <text class="body" x="0" y="22">Obsidian Executor</text>
+        <rect x="260" y="4" width="420" height="24" rx="12" fill="#0d1827" stroke="#2c4f70" stroke-width="1"/>
+        <rect x="260" y="4" width="361" height="24" rx="12" fill="url(#hpFill)"/>
+        <text class="body" x="700" y="23">86%</text>
+      </g>
+    </g>
+
+    <g transform="translate(836,324)">
+      <rect class="panel" x="0" y="0" rx="14" ry="14" width="280" height="474"/>
+      <text class="label" x="24" y="42">KEYSTONE</text>
+      <text class="value" x="24" y="124" font-size="72" filter="url(#blueOuterGlow)">+17</text>
+
+      <rect x="24" y="158" width="232" height="2" fill="#24557a"/>
+
+      <text class="body" x="24" y="208">Upgrade Thresholds</text>
+
+      <g transform="translate(24,232)">
+        <rect x="0" y="0" width="232" height="58" rx="10" fill="#0f1a2a" stroke="#27567f"/>
+        <text class="value" x="16" y="37" font-size="28">+</text>
+        <text class="body" x="64" y="36">Beat Timer</text>
+      </g>
+      <g transform="translate(24,304)">
+        <rect x="0" y="0" width="232" height="58" rx="10" fill="#0f1a2a" stroke="#27567f"/>
+        <text class="value" x="16" y="37" font-size="28">++</text>
+        <text class="body" x="64" y="36">80% of Timer</text>
+      </g>
+      <g transform="translate(24,376)">
+        <rect x="0" y="0" width="232" height="58" rx="10" fill="#0f1a2a" stroke="#27567f"/>
+        <text class="value" x="16" y="37" font-size="28">+++</text>
+        <text class="body" x="64" y="36">60% of Timer</text>
+      </g>
+    </g>
+  </g>
+</svg>
