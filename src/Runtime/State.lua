@@ -248,6 +248,15 @@ function ns:HandleChallengeCompleted()
         self.state.elapsed = (tonumber(self.state.completionTimeMs) or 0) / 1000
         self.state.timerStarted = true
     end
+
+    for i = 1, #self.state.objectives do
+        local objective = self.state.objectives[i]
+        if objective and not objective.completed then
+            objective.completed = true
+            objective.doneAt = tonumber(self.state.elapsed) or 0
+        end
+    end
+
     self:RecordRunSplits()
 end
 

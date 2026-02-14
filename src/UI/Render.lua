@@ -7,6 +7,8 @@ local FONT_PATHS = {
     SKURRI = "Fonts\\SKURRI.ttf",
 }
 
+local TIMER_FAILED_COLOR = "FFFF2A2E"
+
 local function getFloodgateCompletedPreviewState()
     return {
         inChallenge = true,
@@ -210,6 +212,7 @@ function ns:RefreshVisibility()
     else
         self.ui.root:Hide()
     end
+    self:UpdateObjectiveTrackerVisibility()
 end
 
 function ns:Render()
@@ -232,7 +235,13 @@ function ns:Render()
         mapText = string.format("%s  +%d", state.mapName, state.level)
     end
     self.ui.title:SetText(mapText)
-    self.ui.timer:SetText(self:FormatTime(state.elapsed))
+    local elapsed = tonumber(state.elapsed) or 0
+    local limit = tonumber(state.timeLimit) or 0
+    local timerText = self:FormatTime(elapsed)
+    if limit > 0 then
+        timerText = timerText .. "/" .. self:FormatTime(limit)
+    end
+    self.ui.timer:SetText(timerText)
 
     if self.ui.previewMode and (self.db.profile.previewScenario == "FLOODGATE_COMPLETED" or self.db.profile.previewScenario == "IN_PROGRESS") then
         self.ui.recordText:SetText("PB 32:54  |  Best Timed 32:54")
@@ -246,11 +255,12 @@ function ns:Render()
         end
     end
 
+    local timerFailed = (limit > 0) and (elapsed > limit)
     if state.challengeCompleted then
         if state.completedOnTime then
             self.ui.statusText:SetText("|cff7CFC00COMPLETED (Timed)|r")
         else
-            self.ui.statusText:SetText("|cffFF9966COMPLETED|r")
+            self.ui.statusText:SetText("|cffFF2A2EFAILED|r")
         end
     elseif self.db.profile.showPaceHints and (tonumber(state.timeLimit) or 0) > 0 then
         local elapsed = tonumber(state.elapsed) or 0
@@ -269,9 +279,24 @@ function ns:Render()
     else
         self.ui.statusText:SetText("")
     end
+
+    local appearance = self.db.profile.appearance or {}
+    local useClassColor = appearance.useClassColor and true or false
+    local accentR, accentG, accentB
+    if useClassColor then
+        accentR, accentG, accentB = self:ClassColor()
+    else
+        accentR, accentG, accentB = self:HexToRGBA(appearance.accentColor, 0.33, 0.73, 1.00, 1)
+    end
+    if timerFailed or (state.challengeCompleted and not state.completedOnTime) then
+        local failR, failG, failB, failA = self:HexToRGBA(TIMER_FAILED_COLOR, 1, 0.16, 0.18, 1)
+        self.ui.timer:SetTextColor(failR, failG, failB, failA)
+    else
+        local timerR, timerG, timerB, timerA = self:HexToRGBA(appearance.timerColor, accentR, accentG, accentB, 1)
+        self.ui.timer:SetTextColor(timerR, timerG, timerB, timerA)
+    end
     updateAffixIcons()
 
-    local limit = tonumber(state.timeLimit) or 0
     if limit <= 0 then
         self.ui.chest3:SetText("+3 --:--")
         self.ui.chest2:SetText("+2 --:--")
@@ -299,31 +324,10 @@ function ns:Render()
 
     self.ui.deaths:SetText(string.format("Deaths %d  |  Penalty %s", state.deathCount, self:FormatTime(state.deathPenalty)))
 
-    local maxObjectiveRows = #self.ui.objectiveRows
-    local firstRow = self.ui.objectiveRows[1]
-    local rootBottom = self.ui.root:GetBottom()
-    if firstRow and rootBottom then
-        local firstTop = firstRow:GetTop()
-        if firstTop then
-            local sampleHeight = math.max(10, firstRow:GetStringHeight())
-            local rowStride = sampleHeight + 4
-            local available = firstTop - (rootBottom + 8)
-            maxObjectiveRows = math.floor(available / rowStride) + 1
-            if maxObjectiveRows < 0 then
-                maxObjectiveRows = 0
-            end
-            if maxObjectiveRows > #self.ui.objectiveRows then
-                maxObjectiveRows = #self.ui.objectiveRows
-            end
-        end
-    end
-
     for i = 1, #self.ui.objectiveRows do
         local row = self.ui.objectiveRows[i]
         local objective = state.objectives[i]
-        if i > maxObjectiveRows then
-            row:Hide()
-        elseif objective then
+        if objective then
             row:Show()
             if objective.completed then
                 row:SetText(string.format("|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r", objective.text, self:FormatTime(objective.doneAt or state.elapsed)))
@@ -461,7 +465,7 @@ function ns:BuildUI()
     statusText:SetWordWrap(false)
 
     local objectiveRows = {}
-    for i = 1, 6 do
+    for i = 1, 10 do
         local row = root:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         if i == 1 then
             row:SetPoint("TOPLEFT", statusText, "BOTTOMLEFT", 0, -6)

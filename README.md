@@ -1,141 +1,110 @@
 # Keystone Monitor
 
-A modern Mythic+ tracker addon for World of Warcraft, focused on clarity during runs and deep UI customization outside runs.
+## Keystone Monitor: Your Ultimate Mythic+ Tracker
+
+Keystone Monitor is a comprehensive tracker designed to enhance your Mythic+ dungeon experience with a clear, customizable, and easy-to-read interface.
 
 Created by **Korivash**.
 
-## Why This Addon
+## Project Docs
 
-Most M+ trackers are either too noisy or too rigid. Keystone Monitor aims to stay compact in combat while still giving players full control over layout, colors, fonts, and profile sharing.
+- [Changelog](CHANGELOG.md)
+- [Roadmap](ROADMAP.md)
+- [Contributing](CONTRIBUTING.md)
+- [Support](SUPPORT.md)
 
-## Core Features
+## What It Tracks
 
-- Real-time run timer and chest breakpoints (`+3`, `+2`, `+1`)
-- Enemy forces progress + percentage
-- Death counter + death penalty time
-- Objective completion tracking
-- Boss-style completion markers for forces and objectives (`[ ]` / `[Done]`)
-- Dungeon PB summary tracking
-- Active affix icons with hover tooltips (current keystone with weekly fallback)
-- Unlockable/lockable draggable tracker
-- `/km` UI Studio with advanced customization
+- **Active Dungeon & Key Level**: Instantly see the dungeon you are in and the level of your active key.
+- **Run Timer & Chest Breakpoints**: Keep track of progress with timer display and chest breakpoints (`+3`, `+2`, `+1`).
+- **Enemy Forces Progress Bar**: Visual progress of enemy forces and percentage completion.
+- **Death Count & Penalties**: Keep an eye on deaths and penalty time.
+- **Scenario Objective Completion**: Track active scenario objectives for timely completion.
+- **Personal Best Summary**: See your personal best dungeon run details for each dungeon.
+- **Active Affix Icons**: View active affixes for the current key with tooltips.
 
-## Run Completion Behavior
+## Key Commands
 
-- On dungeon completion, final run stats remain visible on the tracker.
-- The tracker keeps completed run data until you leave the Mythic+ instance.
-- Completion status text (`COMPLETED` / `COMPLETED (Timed)`) is shown below the deaths/penalty row.
-- Objective rows automatically hide when vertical space is limited so text stays inside the frame.
-- Frame opacity controls only the panel background/border, not text/icon visibility.
+- `/km`: Open/close the customization studio.
+- `/km unlock`: Unlock tracker position for free movement.
+- `/km lock`: Lock tracker position.
+- `/km show`: Show tracker while unlocked.
+- `/km hide`: Hide tracker while unlocked.
+- `/km reset`: Reset tracker position.
 
-## UI Studio (`/km`)
+### Aliases
 
-Open with:
+- `/midnight`
+- `/mplus`
+- `/keystonemonitor`
 
-```text
-/km
-```
+## Customization (UI Studio)
 
-### Behavior
+Launch Keystone Monitor UI Studio with `/km`.
 
-- Lock tracker position
-- Show tracker while unlocked
-- Class-color accent toggle
-- Pace hint status toggle (`PACE: +3/+2/+1/Overtime`)
-- Preview Scenario selector:
-  - Live Data
-  - Simulated In-Progress
-  - Floodgate Completed
+### Layout & Behavior
 
-### Layout
-
-- Centered two-column studio layout with expanded spacing to prevent overlap
-- Frame width
-- Frame height
-- Frame scale
-- Frame opacity
-- Font scale
+- Lock/unlock tracker movement.
+- Toggle show/hide while unlocked.
+- Adjust frame width, height, and scale.
+- Control panel opacity.
+- Font size scaling for readability.
 
 ### Visual Skinning
 
-- Hex color controls (`RRGGBB` or `RRGGBBAA`)
-- Clickable color swatches that open WoW color wheel
-- Manual hex input support
-
-Important:
-
-- If you want custom accent color, uncheck **Use class color for accent** first.
+- Hex color inputs for core UI elements.
+- Clickable color swatches with WoW color wheel integration.
+- Manual hex input (`RRGGBB` or `RRGGBBAA`).
+- Accent color customization (disable **Use class color for accent** for full manual control).
 
 ### Fonts
 
-- Independent font selection for:
-  - Title
-  - Timer
-  - Body text
+- Title font
+- Timer font
+- Body font
 
-### Presets and Profiles
+### Presets & Profiles
 
-- Built-in theme presets
-- Export profile string
-- Import profile string
+- Built-in visual presets.
+- Export/import profile strings.
 
-## Commands
+## Design Goals
 
-- `/km` - open/close UI Studio
-- `/km unlock` - unlock tracker movement
-- `/km lock` - lock tracker movement
-- `/km show` - show while unlocked
-- `/km hide` - hide while unlocked
-- `/km reset` - reset tracker position
-
-Aliases:
-
-- `/keystonemonitor`
-- `/mplus`
+- **Fast Readability**: Easy to read during intense dungeon pulls.
+- **Clear Time & Objective Tracking**: Always keep key objectives and timer state visible.
+- **Minimal Screen Clutter**: Keep UI clean and focused.
+- **Full Customizability**: Tailor Keystone Monitor to your setup.
 
 ## Installation
 
+### CurseForge (Recommended)
+
+- Install Keystone Monitor through CurseForge.
+
 ### Manual
 
-1. Place this folder in:
-   `World of Warcraft/_retail_/Interface/AddOns/KeystoneMonitor`
-2. Launch or restart WoW.
-3. Run `/reload`.
+1. Place the addon folder in:
+   `World of Warcraft/_retail_/Interface/AddOns/`
+2. Ensure the folder name is exactly `KeystoneMonitor`.
+3. Run `/reload` in game.
 
-### Addon Manager
+## Support
 
-- Install through CurseForge/Wago if packaged there.
+Found a bug or have a feature request? Please include:
 
-## Compatibility
+- A description of the issue.
+- What you expected to happen.
+- Your `/km` profile export string (if relevant).
+- A screenshot (for layout/visual issues).
 
-- Retail WoW
-- TOC currently targets `12.0.x` era interface versions
+Discord: https://discord.gg/JbQQTbH4hR
 
-## Project Structure
+## We're Compatible with Midnight
 
-```text
-KeystoneMonitor/
-  src/
-    Core/        # boot + shared utilities
-    Data/        # saved variable defaults
-    Runtime/     # challenge state, events, timer, records
-    UI/          # tracker rendering, options, slash commands
-  assets/        # design assets/mockups
-```
+All core features from Midnight are preserved, with a few exceptions like Pull Count and Mob Count tooltips, which are planned for a future update.
 
-## Development Notes
+## Why Choose Keystone Monitor?
 
-- SavedVariables: `KeystoneMonitorDB`
-- Primary entry point: `KeystoneMonitor.toc`
-- Addon namespace exposed as `_G.KeystoneMonitor`
+Keystone Monitor is designed for simplicity, customization, and performance. Compared to typical Mythic+ trackers, it provides a minimalist look with robust functionality and low visual noise.
 
-## Documentation
-
-- Changelog: `CHANGELOG.md`
-- Roadmap: `ROADMAP.md`
-- Contributing: `CONTRIBUTING.md`
-- Support and bug reports: `SUPPORT.md`
-
-## License
-
-No license file is currently included. All rights reserved by default until a license is added.
+Join thousands of players who have switched to Keystone Monitor for a streamlined, customizable Mythic+ dungeon tracking experience.

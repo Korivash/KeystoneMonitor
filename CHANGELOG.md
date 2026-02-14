@@ -6,6 +6,21 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-02-14
+
+### Changed
+
+- Timer display now shows elapsed and limit together (example: `20:00/35:00`).
+- Failed key runs now show `FAILED` instead of `COMPLETED`.
+- Timer text now turns red when the run is over the dungeon time limit.
+- Objective list capacity increased to support up to 10 objective rows.
+- Remaining incomplete objectives are now finalized at run completion to keep end-of-run objective state consistent.
+- Objective Tracker visibility is now managed during active Mythic+ runs to prevent repeated tracker popups and background bar overlap.
+
+### Credits
+
+- Changes in this release were implemented by **Korivash**.
+
 ## [0.3.0] - 2026-02-13
 
 ### Added
