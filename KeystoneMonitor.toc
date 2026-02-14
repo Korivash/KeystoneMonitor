@@ -2,7 +2,7 @@
 ## Title: Mythic+ Progress & Boss Tracker - Keystone Monitor
 ## Notes: Compact class-colored Mythic+ tracker with full runtime modules.
 ## Author: Korivash
-## Version: 0.3.1
+## Version: 0.3.2
 ## IconTexture: Interface\AddOns\KeystoneMonitor\addon_icon
 ## SavedVariables: KeystoneMonitorDB
 ## Category-enUS: Mythic+ Dungeons

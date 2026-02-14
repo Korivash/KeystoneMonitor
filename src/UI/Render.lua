@@ -244,7 +244,7 @@ function ns:Render()
     self.ui.timer:SetText(timerText)
 
     if self.ui.previewMode and (self.db.profile.previewScenario == "FLOODGATE_COMPLETED" or self.db.profile.previewScenario == "IN_PROGRESS") then
-        self.ui.recordText:SetText("PB 32:54  |  Best Timed 32:54")
+        self.ui.recordText:SetText("PB 32:54  |  Best Timed +10 32:54")
     else
         local recordSummary = self:GetRecordSummary()
         local comparisonSummary = self:GetBestTimedComparisonSummary()
@@ -387,7 +387,7 @@ function ns:BuildUI()
     chest1:SetPoint("TOPLEFT", chest2, "BOTTOMLEFT", 0, -3)
 
     local recordText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    recordText:SetPoint("TOPLEFT", timer, "BOTTOMLEFT", 0, -12)
+    recordText:SetPoint("TOPLEFT", timer, "BOTTOMLEFT", 0, -14)
     recordText:SetPoint("TOPRIGHT", root, "TOPRIGHT", -10, -58)
     recordText:SetJustifyH("CENTER")
 

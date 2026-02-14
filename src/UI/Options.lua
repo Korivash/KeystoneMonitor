@@ -288,6 +288,41 @@ local function makeInput(parent, width, point, relTo, relPoint, x, y)
     return edit
 end
 
+local function clearOptionsInputFocus(frame)
+    if not frame then
+        return
+    end
+
+    if frame.exportBox and frame.exportBox.ClearFocus then
+        frame.exportBox:ClearFocus()
+    end
+    if frame.importBox and frame.importBox.ClearFocus then
+        frame.importBox:ClearFocus()
+    end
+
+    if frame.colorRows then
+        for _, row in pairs(frame.colorRows) do
+            if row and row.input and row.input.ClearFocus then
+                row.input:ClearFocus()
+            end
+        end
+    end
+
+    if GetCurrentKeyBoardFocus then
+        local focus = GetCurrentKeyBoardFocus()
+        if focus and focus.ClearFocus then
+            local owner = focus
+            while owner do
+                if owner == frame then
+                    focus:ClearFocus()
+                    break
+                end
+                owner = owner.GetParent and owner:GetParent() or nil
+            end
+        end
+    end
+end
+
 local function dropdownSetValue(dropdown, options, key)
     for i = 1, #options do
         local opt = options[i]
@@ -662,11 +697,13 @@ function ns:BuildOptionsUI()
         selfFrame:StopMovingOrSizing()
     end)
     frame:SetScript("OnShow", function()
+        clearOptionsInputFocus(frame)
         ns.ui.previewMode = true
         ns:RefreshVisibility()
         ns:Render()
     end)
     frame:SetScript("OnHide", function()
+        clearOptionsInputFocus(frame)
         ns.ui.previewMode = false
         ns:RefreshVisibility()
     end)
@@ -879,6 +916,9 @@ function ns:BuildOptionsUI()
     exportBox:SetScript("OnEditFocusGained", function(edit)
         edit:HighlightText()
     end)
+    exportBox:SetScript("OnEscapePressed", function(edit)
+        edit:ClearFocus()
+    end)
 
     local generateExportButton = CreateFrame("Button", nil, profiles, "UIPanelButtonTemplate")
     generateExportButton:SetSize(132, 24)
@@ -903,6 +943,9 @@ function ns:BuildOptionsUI()
         else
             ns:Print(msg)
         end
+    end)
+    importBox:SetScript("OnEscapePressed", function(edit)
+        edit:ClearFocus()
     end)
 
     local importButton = CreateFrame("Button", nil, profiles, "UIPanelButtonTemplate")
@@ -942,20 +985,20 @@ function ns:BuildOptionsUI()
         ns:Print("Position reset.")
     end)
 
-    local resetRecordsButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
-    resetRecordsButton:SetSize(120, 24)
-    resetRecordsButton:SetPoint("LEFT", resetPosButton, "RIGHT", 8, 0)
-    resetRecordsButton:SetText("Reset Records")
-    styleButton(resetRecordsButton, { 0.34, 0.18, 0.09, 0.95 }, { 0.44, 0.24, 0.13, 0.98 }, { 0.65, 0.36, 0.22, 1 })
-    resetRecordsButton:SetScript("OnClick", function()
-        wipe(ns.db.records)
+    local refreshHistoryButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
+    refreshHistoryButton:SetSize(120, 24)
+    refreshHistoryButton:SetPoint("LEFT", resetPosButton, "RIGHT", 8, 0)
+    refreshHistoryButton:SetText("Refresh M+ Data")
+    styleButton(refreshHistoryButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
+    refreshHistoryButton:SetScript("OnClick", function()
+        ns:InvalidateRunHistoryCache()
         ns:Render()
-        ns:Print("Saved dungeon records reset.")
+        ns:Print("Reloaded best times from Blizzard M+ history.")
     end)
 
     local applyPresetButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
     applyPresetButton:SetSize(120, 24)
-    applyPresetButton:SetPoint("LEFT", resetRecordsButton, "RIGHT", 8, 0)
+    applyPresetButton:SetPoint("LEFT", refreshHistoryButton, "RIGHT", 8, 0)
     applyPresetButton:SetText("Apply Preset")
     styleButton(applyPresetButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
     applyPresetButton:SetScript("OnClick", function()
@@ -969,6 +1012,7 @@ function ns:BuildOptionsUI()
     closeButton:SetText("Close")
     styleButton(closeButton, { 0.15, 0.15, 0.17, 0.95 }, { 0.20, 0.20, 0.23, 0.98 }, { 0.30, 0.32, 0.37, 1 })
     closeButton:SetScript("OnClick", function()
+        clearOptionsInputFocus(frame)
         frame:Hide()
     end)
 

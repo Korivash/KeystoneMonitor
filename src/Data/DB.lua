@@ -31,7 +31,6 @@ local defaults = {
             forcesBarBGColor = "212121E6",
         },
     },
-    records = {},
 }
 
 function ns:InitDB()

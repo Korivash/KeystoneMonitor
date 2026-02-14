@@ -54,6 +54,11 @@ local function onChallengeReset()
     ns:SyncChallengeState(true)
 end
 
+local function onChallengeMapsUpdate()
+    ns:InvalidateRunHistoryCache()
+    ns:Render()
+end
+
 local handlers = {
     ADDON_LOADED = onLoaded,
     PLAYER_ENTERING_WORLD = onThemeEvent,
@@ -68,6 +73,7 @@ local handlers = {
     SCENARIO_POI_UPDATE = onScenarioUpdate,
     CHALLENGE_MODE_COMPLETED = onChallengeCompleted,
     CHALLENGE_MODE_RESET = onChallengeReset,
+    CHALLENGE_MODE_MAPS_UPDATE = onChallengeMapsUpdate,
 }
 
 function ns:RegisterRuntimeEvents()

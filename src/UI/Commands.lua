@@ -4,7 +4,6 @@ function ns:RegisterSlashCommands()
     SLASH_KEYSTONEMONITOR1 = "/keystonemonitor"
     SLASH_KEYSTONEMONITOR2 = "/mplus"
     SLASH_KEYSTONEMONITOR3 = "/km"
-    SLASH_KEYSTONEMONITOR4 = "/midnight"
 
     SlashCmdList.KEYSTONEMONITOR = function(message)
         local cmd = self:Trim((message or ""):lower())
