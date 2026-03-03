@@ -69,13 +69,18 @@ function ns:UpdateObjectiveTrackerVisibility()
 end
 
 function ns:SyncChallengeState(forceFull)
-    self:RefreshWeeklyAffixes()
-
     local wasInChallenge = self.state.inChallenge
-    local nowInChallenge = self:IsChallengeActive()
-    local insideMythicPlusInstance = self:IsInMythicPlusInstance()
+    local nowInChallenge, activeMode = self:IsTrackedDungeonActive()
+    self.state.mode = activeMode
 
-    if not nowInChallenge and self.state.challengeCompleted and insideMythicPlusInstance then
+    if activeMode == "MYTHIC_PLUS" then
+        self:RefreshWeeklyAffixes()
+    else
+        wipe(self.state.weeklyAffixIDs)
+        wipe(self.state.weeklyAffixes)
+    end
+
+    if not nowInChallenge and self.state.challengeCompleted and activeMode == "MYTHIC_PLUS" and self:IsInMythicPlusInstance() then
         self.state.inChallenge = true
         self:RefreshVisibility()
         self:UpdateObjectiveTrackerVisibility()
@@ -95,6 +100,12 @@ function ns:SyncChallengeState(forceFull)
 
     if nowInChallenge and (not wasInChallenge or forceFull) then
         self.state.inChallenge = true
+        if activeMode ~= "MYTHIC_PLUS" then
+            self.state.challengeCompleted = false
+            self.state.completedOnTime = nil
+            self.state.completionTimeMs = nil
+            self.state.runStartTime = GetTime()
+        end
         self:RefreshChallengeData()
         self:RefreshVisibility()
         self:UpdateObjectiveTrackerVisibility()

@@ -85,3 +85,27 @@ function ns:HexToRGBA(input, fallbackR, fallbackG, fallbackB, fallbackA)
     local a = tonumber(normalized:sub(7, 8), 16) / 255
     return r, g, b, a
 end
+
+function ns:IsDebugModeEnabled()
+    return self.debugMode and true or false
+end
+
+function ns:PrintDungeonModeDebug(context)
+    local instanceName, instanceType, difficultyID, difficultyName = GetInstanceInfo()
+    local selectedMode = self:GetSelectedDungeonMode()
+    local detectedMode = self:GetCurrentDungeonMode() or "NONE"
+    local active, activeMode = self:IsTrackedDungeonActive()
+
+    self:Print(string.format(
+        "[Debug%s] selected=%s detected=%s active=%s mode=%s instance=%s type=%s diffID=%s diff=%s",
+        context and (" " .. tostring(context)) or "",
+        tostring(selectedMode),
+        tostring(detectedMode),
+        active and "yes" or "no",
+        tostring(activeMode or "NONE"),
+        tostring(instanceName or "UNKNOWN"),
+        tostring(instanceType or "NONE"),
+        tostring(difficultyID or "nil"),
+        tostring(difficultyName or "UNKNOWN")
+    ))
+end

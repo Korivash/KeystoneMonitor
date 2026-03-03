@@ -1,15 +1,28 @@
 local _, ns = ...
 
+local MODE_AUTO = "AUTO"
+local MODE_MYTHIC_PLUS = "MYTHIC_PLUS"
+local MODE_HEROIC = "HEROIC"
+local MODE_NORMAL = "NORMAL"
+
+local M_PLUS_DIFFICULTIES = {
+    [8] = true,
+    [23] = true,
+}
+
 local function newRuntimeState()
     return {
         inChallenge = false,
+        mode = MODE_MYTHIC_PLUS,
         challengeCompleted = false,
         completedOnTime = nil,
         completionTimeMs = nil,
         timerStarted = false,
+        runStartTime = nil,
         elapsed = 0,
         timeLimit = 0,
         mapID = nil,
+        instanceID = nil,
         mapName = "Mythic+",
         level = 0,
         affixIDs = {},
@@ -88,8 +101,70 @@ end
 
 function ns:IsInMythicPlusInstance()
     local _, instanceType, difficultyID = GetInstanceInfo()
-    local isMythicPlus = difficultyID == 8 or difficultyID == 23
+    local isMythicPlus = M_PLUS_DIFFICULTIES[difficultyID] and true or false
     return instanceType == "party" and isMythicPlus
+end
+
+function ns:GetSelectedDungeonMode()
+    local configured = self.db and self.db.profile and self.db.profile.dungeonMode
+    if configured == MODE_AUTO or configured == MODE_NORMAL or configured == MODE_HEROIC or configured == MODE_MYTHIC_PLUS then
+        return configured
+    end
+    return MODE_AUTO
+end
+
+function ns:GetCurrentDungeonMode()
+    local _, instanceType, difficultyID, difficultyName = GetInstanceInfo()
+    if instanceType ~= "party" then
+        return nil
+    end
+
+    if M_PLUS_DIFFICULTIES[difficultyID] then
+        return MODE_MYTHIC_PLUS
+    end
+
+    local localizedNormal = (PLAYER_DIFFICULTY1 or "Normal"):lower()
+    local localizedHeroic = (PLAYER_DIFFICULTY2 or "Heroic"):lower()
+    local currentDifficultyName = tostring(difficultyName or ""):lower()
+    if currentDifficultyName ~= "" then
+        if currentDifficultyName:find(localizedNormal, 1, true) then
+            return MODE_NORMAL
+        end
+        if currentDifficultyName:find(localizedHeroic, 1, true) then
+            return MODE_HEROIC
+        end
+    end
+
+    if difficultyID == 2 then
+        return MODE_HEROIC
+    end
+    if difficultyID == 1 then
+        return MODE_NORMAL
+    end
+    return nil
+end
+
+function ns:IsTrackedDungeonActive()
+    local selectedMode = self:GetSelectedDungeonMode()
+    local currentMode = self:GetCurrentDungeonMode()
+    if selectedMode == MODE_AUTO then
+        if not currentMode then
+            return false, MODE_MYTHIC_PLUS
+        end
+        if currentMode == MODE_MYTHIC_PLUS then
+            return self:IsChallengeActive(), currentMode
+        end
+        return true, currentMode
+    end
+
+    if selectedMode ~= currentMode then
+        return false, selectedMode
+    end
+
+    if selectedMode == MODE_MYTHIC_PLUS then
+        return self:IsChallengeActive(), selectedMode
+    end
+    return true, selectedMode
 end
 
 function ns:RefreshChallengeData()
@@ -101,6 +176,20 @@ function ns:RefreshChallengeData()
 end
 
 function ns:RefreshMeta()
+    local mode = self.state.mode or MODE_MYTHIC_PLUS
+    local instanceName, _, _, _, _, _, _, instanceID = GetInstanceInfo()
+    self.state.instanceID = tonumber(instanceID) or nil
+
+    if mode ~= MODE_MYTHIC_PLUS then
+        self.state.mapID = nil
+        self.state.mapName = self:SafeMapName(instanceName or "Dungeon")
+        self.state.timeLimit = 0
+        self.state.level = 0
+        wipe(self.state.affixIDs)
+        wipe(self.state.affixes)
+        return
+    end
+
     if not C_ChallengeMode then
         return
     end
@@ -168,17 +257,33 @@ function ns:RefreshTimer()
     if not self.state.inChallenge then
         self.state.elapsed = 0
         self.state.timerStarted = false
+        self.state.runStartTime = nil
         return
     end
 
-    local elapsed = select(2, GetWorldElapsedTime(1))
-    if elapsed then
-        self.state.elapsed = tonumber(elapsed) or 0
-        self.state.timerStarted = true
+    if self.state.mode == MODE_MYTHIC_PLUS then
+        local elapsed = select(2, GetWorldElapsedTime(1))
+        if elapsed then
+            self.state.elapsed = tonumber(elapsed) or 0
+            self.state.timerStarted = true
+        end
+        return
     end
+
+    if not self.state.runStartTime then
+        self.state.runStartTime = GetTime()
+    end
+    self.state.elapsed = math.max(0, GetTime() - self.state.runStartTime)
+    self.state.timerStarted = true
 end
 
 function ns:RefreshDeaths()
+    if self.state.mode ~= MODE_MYTHIC_PLUS then
+        self.state.deathCount = 0
+        self.state.deathPenalty = 0
+        return
+    end
+
     if not C_ChallengeMode or not C_ChallengeMode.GetDeathCount then
         self.state.deathCount = 0
         self.state.deathPenalty = 0
@@ -192,6 +297,8 @@ end
 
 function ns:RefreshObjectives()
     wipe(self.state.objectives)
+    self.state.forcesCurrent = 0
+    self.state.forcesTotal = 0
 
     if not C_Scenario or not C_Scenario.GetStepInfo then
         return
@@ -209,12 +316,14 @@ function ns:RefreshObjectives()
         local info = C_ScenarioInfo.GetCriteriaInfo(i)
         if info then
             if info.isWeightedProgress and info.totalQuantity and info.totalQuantity > 0 then
-                self.state.forcesTotal = tonumber(info.totalQuantity) or 0
-                local quantity = tonumber((info.quantityString or ""):match("(%d+)"))
-                if not quantity then
-                    quantity = tonumber(info.quantity) or 0
+                if self.state.mode == MODE_MYTHIC_PLUS then
+                    self.state.forcesTotal = tonumber(info.totalQuantity) or 0
+                    local quantity = tonumber(info.quantity)
+                    if not quantity then
+                        quantity = tonumber((info.quantityString or ""):match("(%d+)")) or 0
+                    end
+                    self.state.forcesCurrent = quantity
                 end
-                self.state.forcesCurrent = quantity
             else
                 local row = {
                     text = info.description or ("Objective " .. i),

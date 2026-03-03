@@ -26,6 +26,13 @@ local PREVIEW_SCENARIO_OPTIONS = {
     { key = "FLOODGATE_COMPLETED", name = "Floodgate Completed" },
 }
 
+local DUNGEON_MODE_OPTIONS = {
+    { key = "AUTO", name = "Auto" },
+    { key = "NORMAL", name = "Normal" },
+    { key = "HEROIC", name = "Heroic" },
+    { key = "MYTHIC_PLUS", name = "Mythic+" },
+}
+
 local PRESET_OPTIONS = {
     {
         key = "KEYSTONE",
@@ -122,6 +129,7 @@ local EXPORT_FIELDS = {
     "showWhenUnlocked",
     "showBestTimedComparison",
     "showPaceHints",
+    "dungeonMode",
     "previewScenario",
     "useFloodgateCompletedPreview",
     "scale",
@@ -399,6 +407,7 @@ local function buildExportString()
         showWhenUnlocked = profile.showWhenUnlocked and "1" or "0",
         showBestTimedComparison = profile.showBestTimedComparison and "1" or "0",
         showPaceHints = profile.showPaceHints and "1" or "0",
+        dungeonMode = tostring(profile.dungeonMode or "AUTO"),
         previewScenario = tostring(profile.previewScenario or "LIVE"),
         useFloodgateCompletedPreview = ((profile.previewScenario or "LIVE") == "FLOODGATE_COMPLETED") and "1" or "0",
         scale = string.format("%.2f", profile.scale or 1),
@@ -469,6 +478,11 @@ local function applyImportString(serialized)
     if map.showPaceHints then
         profile.showPaceHints = map.showPaceHints ~= "0"
     end
+    if map.dungeonMode then
+        if map.dungeonMode == "AUTO" or map.dungeonMode == "NORMAL" or map.dungeonMode == "HEROIC" or map.dungeonMode == "MYTHIC_PLUS" then
+            profile.dungeonMode = map.dungeonMode
+        end
+    end
     if map.previewScenario then
         if map.previewScenario == "LIVE" or map.previewScenario == "IN_PROGRESS" or map.previewScenario == "FLOODGATE_COMPLETED" then
             profile.previewScenario = map.previewScenario
@@ -515,6 +529,7 @@ local function applyImportString(serialized)
     end
 
     ns:ApplyFrameSettings()
+    ns:SyncChallengeState(true)
     return true, "Profile imported."
 end
 
@@ -644,6 +659,7 @@ function ns:RefreshOptionsUI()
     frame.showBestTimedComparisonCheck:SetChecked(profile.showBestTimedComparison and true or false)
     frame.showPaceHintsCheck:SetChecked(profile.showPaceHints and true or false)
     frame.useClassColorCheck:SetChecked(appearance.useClassColor and true or false)
+    dropdownSetValue(frame.dungeonModeDrop.dropdown, DUNGEON_MODE_OPTIONS, profile.dungeonMode or "AUTO")
     dropdownSetValue(frame.previewScenarioDrop.dropdown, PREVIEW_SCENARIO_OPTIONS, profile.previewScenario or "LIVE")
 
     frame.widthSlider:SetValue(appearance.frameWidth or 350)
@@ -737,7 +753,7 @@ function ns:BuildOptionsUI()
     local gutter = 20
     local topOffset = -18
 
-    local behavior = section(frame, "Behavior", "TOPLEFT", header, "BOTTOMLEFT", 12, topOffset, colWidth, 280)
+    local behavior = section(frame, "Behavior", "TOPLEFT", header, "BOTTOMLEFT", 12, topOffset, colWidth, 332)
     local layout = section(frame, "Layout & Sizing", "TOPRIGHT", header, "BOTTOMRIGHT", -12, topOffset, colWidth, 320)
     local fonts = section(frame, "Per-Element Fonts", "TOPLEFT", behavior, "BOTTOMLEFT", 0, -12, colWidth, 168)
     local actions = section(frame, "Actions", "BOTTOM", frame, "BOTTOM", 0, 12, (colWidth * 2) + gutter, 92)
@@ -807,6 +823,22 @@ function ns:BuildOptionsUI()
         -8,
         function(key)
             ns.db.profile.previewScenario = key
+            ns:Render()
+        end
+    )
+
+    local dungeonModeDrop = makeDropdown(
+        behavior,
+        "Tracked Dungeon Mode",
+        DUNGEON_MODE_OPTIONS,
+        "TOPLEFT",
+        previewScenarioDrop,
+        "BOTTOMLEFT",
+        0,
+        -8,
+        function(key)
+            ns.db.profile.dungeonMode = key
+            ns:SyncChallengeState(true)
             ns:Render()
         end
     )
@@ -1021,6 +1053,7 @@ function ns:BuildOptionsUI()
     frame.showUnlockedCheck = showUnlockedCheck
     frame.showBestTimedComparisonCheck = showBestTimedComparisonCheck
     frame.showPaceHintsCheck = showPaceHintsCheck
+    frame.dungeonModeDrop = dungeonModeDrop
     frame.previewScenarioDrop = previewScenarioDrop
     frame.useClassColorCheck = useClassColorCheck
     frame.widthSlider = widthSlider

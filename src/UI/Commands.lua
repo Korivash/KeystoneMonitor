@@ -58,6 +58,22 @@ function ns:RegisterSlashCommands()
             return
         end
 
-        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset")
+        if cmd == "debug" then
+            self.debugMode = not self:IsDebugModeEnabled()
+            if self.debugMode then
+                self:Print("Debug mode enabled. Tracking mode logs will print on zone/difficulty changes.")
+                self:PrintDungeonModeDebug("MANUAL")
+            else
+                self:Print("Debug mode disabled.")
+            end
+            return
+        end
+
+        if cmd == "debug now" then
+            self:PrintDungeonModeDebug("MANUAL")
+            return
+        end
+
+        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km debug, /km debug now")
     end
 end

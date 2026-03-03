@@ -8,7 +8,8 @@ Please include:
 
 - WoW version (Retail build)
 - Addon version
-- Exact command/action performed (for example: `/km`, imported profile, entered key)
+- Active tracking mode (`Auto`, `Normal`, `Heroic`, or `Mythic+`)
+- Exact command/action performed (for example: `/km`, imported profile, changed dungeon mode, entered dungeon/key)
 - Expected behavior
 - Actual behavior
 - Any Lua error text (full copy)
@@ -21,6 +22,9 @@ Please include:
 - Ensure folder name is exactly `KeystoneMonitor`.
 - If addon appears out of date after a patch, enable "Load out of date AddOns" temporarily.
 - Reset position with `/km reset` if tracker appears off-screen.
+- Verify `Tracked Dungeon Mode` in `/km` Behavior matches the dungeon you are in.
+- If display looks mismatched after mode changes, switch mode, then re-enter the dungeon instance.
+- Use `/km debug` while testing mode auto-detection, then `/km debug` again to disable it.
 
 ## Feature Requests
 

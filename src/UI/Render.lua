@@ -12,6 +12,7 @@ local TIMER_FAILED_COLOR = "FFFF2A2E"
 local function getFloodgateCompletedPreviewState()
     return {
         inChallenge = true,
+        mode = "MYTHIC_PLUS",
         challengeCompleted = true,
         completedOnTime = true,
         completionTimeMs = 1974000,
@@ -35,6 +36,7 @@ end
 local function getInProgressPreviewState()
     return {
         inChallenge = true,
+        mode = "MYTHIC_PLUS",
         challengeCompleted = false,
         completedOnTime = nil,
         completionTimeMs = nil,
@@ -230,54 +232,67 @@ function ns:Render()
         end
     end
 
+    local isMythicPlus = state.mode == "MYTHIC_PLUS"
     local mapText = state.mapName
-    if state.level and state.level > 0 then
+    if isMythicPlus and state.level and state.level > 0 then
         mapText = string.format("%s  +%d", state.mapName, state.level)
     end
     self.ui.title:SetText(mapText)
     local elapsed = tonumber(state.elapsed) or 0
     local limit = tonumber(state.timeLimit) or 0
     local timerText = self:FormatTime(elapsed)
-    if limit > 0 then
+    if isMythicPlus and limit > 0 then
         timerText = timerText .. "/" .. self:FormatTime(limit)
     end
     self.ui.timer:SetText(timerText)
 
-    if self.ui.previewMode and (self.db.profile.previewScenario == "FLOODGATE_COMPLETED" or self.db.profile.previewScenario == "IN_PROGRESS") then
-        self.ui.recordText:SetText("PB 32:54  |  Best Timed +10 32:54")
-    else
-        local recordSummary = self:GetRecordSummary()
-        local comparisonSummary = self:GetBestTimedComparisonSummary()
-        if recordSummary and comparisonSummary then
-            self.ui.recordText:SetText(recordSummary .. "\n" .. comparisonSummary)
+    if isMythicPlus then
+        if self.ui.previewMode and (self.db.profile.previewScenario == "FLOODGATE_COMPLETED" or self.db.profile.previewScenario == "IN_PROGRESS") then
+            self.ui.recordText:SetText("PB 32:54  |  Best Timed +10 32:54")
         else
-            self.ui.recordText:SetText(recordSummary or comparisonSummary or "")
+            local recordSummary = self:GetRecordSummary()
+            local comparisonSummary = self:GetBestTimedComparisonSummary()
+            if recordSummary and comparisonSummary then
+                self.ui.recordText:SetText(recordSummary .. "\n" .. comparisonSummary)
+            else
+                self.ui.recordText:SetText(recordSummary or comparisonSummary or "")
+            end
+        end
+    else
+        if state.mode == "HEROIC" then
+            self.ui.recordText:SetText("Heroic Dungeon")
+        else
+            self.ui.recordText:SetText("Normal Dungeon")
         end
     end
 
-    local timerFailed = (limit > 0) and (elapsed > limit)
-    if state.challengeCompleted then
-        if state.completedOnTime then
-            self.ui.statusText:SetText("|cff7CFC00COMPLETED (Timed)|r")
+    local timerFailed = isMythicPlus and (limit > 0) and (elapsed > limit)
+    if isMythicPlus then
+        if state.challengeCompleted then
+            if state.completedOnTime then
+                self.ui.statusText:SetText("|cff7CFC00COMPLETED (Timed)|r")
+            else
+                self.ui.statusText:SetText("|cffFF2A2EFAILED|r")
+            end
+        elseif self.db.profile.showPaceHints and (tonumber(state.timeLimit) or 0) > 0 then
+            local elapsed = tonumber(state.elapsed) or 0
+            local penalty = tonumber(state.deathPenalty) or 0
+            local limit = tonumber(state.timeLimit) or 0
+            local effective = elapsed + penalty
+            if effective <= (limit * 0.6) then
+                self.ui.statusText:SetText("|cff7CFC00PACE: +3|r")
+            elseif effective <= (limit * 0.8) then
+                self.ui.statusText:SetText("|cff53B9FFPACE: +2|r")
+            elseif effective <= limit then
+                self.ui.statusText:SetText("|cffFFD966PACE: +1|r")
+            else
+                self.ui.statusText:SetText("|cffFF6666PACE: Overtime|r")
+            end
         else
-            self.ui.statusText:SetText("|cffFF2A2EFAILED|r")
-        end
-    elseif self.db.profile.showPaceHints and (tonumber(state.timeLimit) or 0) > 0 then
-        local elapsed = tonumber(state.elapsed) or 0
-        local penalty = tonumber(state.deathPenalty) or 0
-        local limit = tonumber(state.timeLimit) or 0
-        local effective = elapsed + penalty
-        if effective <= (limit * 0.6) then
-            self.ui.statusText:SetText("|cff7CFC00PACE: +3|r")
-        elseif effective <= (limit * 0.8) then
-            self.ui.statusText:SetText("|cff53B9FFPACE: +2|r")
-        elseif effective <= limit then
-            self.ui.statusText:SetText("|cffFFD966PACE: +1|r")
-        else
-            self.ui.statusText:SetText("|cffFF6666PACE: Overtime|r")
+            self.ui.statusText:SetText("")
         end
     else
-        self.ui.statusText:SetText("")
+        self.ui.statusText:SetText("Bosses")
     end
 
     local appearance = self.db.profile.appearance or {}
@@ -288,41 +303,58 @@ function ns:Render()
     else
         accentR, accentG, accentB = self:HexToRGBA(appearance.accentColor, 0.33, 0.73, 1.00, 1)
     end
-    if timerFailed or (state.challengeCompleted and not state.completedOnTime) then
+    if isMythicPlus and (timerFailed or (state.challengeCompleted and not state.completedOnTime)) then
         local failR, failG, failB, failA = self:HexToRGBA(TIMER_FAILED_COLOR, 1, 0.16, 0.18, 1)
         self.ui.timer:SetTextColor(failR, failG, failB, failA)
     else
         local timerR, timerG, timerB, timerA = self:HexToRGBA(appearance.timerColor, accentR, accentG, accentB, 1)
         self.ui.timer:SetTextColor(timerR, timerG, timerB, timerA)
     end
-    updateAffixIcons()
 
-    if limit <= 0 then
-        self.ui.chest3:SetText("+3 --:--")
-        self.ui.chest2:SetText("+2 --:--")
-        self.ui.chest1:SetText("+1 --:--")
-    else
-        self.ui.chest3:SetText("+3 " .. self:FormatTime((limit * 0.6) - state.elapsed))
-        self.ui.chest2:SetText("+2 " .. self:FormatTime((limit * 0.8) - state.elapsed))
-        self.ui.chest1:SetText("+1 " .. self:FormatTime(limit - state.elapsed))
-    end
+    if isMythicPlus then
+        updateAffixIcons()
+        self.ui.chest3:Show()
+        self.ui.chest2:Show()
+        self.ui.chest1:Show()
+        self.ui.forcesBar:Show()
+        self.ui.forcesText:Show()
+        self.ui.deaths:Show()
 
-    local total = tonumber(state.forcesTotal) or 0
-    local current = tonumber(state.forcesCurrent) or 0
-    if total > 0 then
-        local pct = math.min(1, math.max(0, current / total))
-        self.ui.forcesBar:SetValue(pct)
-        if pct >= 1 then
-            self.ui.forcesText:SetText(string.format("|cff7CFC00[Done]|r Forces %d / %d (100.0%%)", total, total))
+        if limit <= 0 then
+            self.ui.chest3:SetText("+3 --:--")
+            self.ui.chest2:SetText("+2 --:--")
+            self.ui.chest1:SetText("+1 --:--")
         else
-            self.ui.forcesText:SetText(string.format("|cffBFBFBF[ ]|r Forces %d / %d (%.1f%%)", current, total, pct * 100))
+            self.ui.chest3:SetText("+3 " .. self:FormatTime((limit * 0.6) - state.elapsed))
+            self.ui.chest2:SetText("+2 " .. self:FormatTime((limit * 0.8) - state.elapsed))
+            self.ui.chest1:SetText("+1 " .. self:FormatTime(limit - state.elapsed))
         end
-    else
-        self.ui.forcesBar:SetValue(0)
-        self.ui.forcesText:SetText("|cffBFBFBF[ ]|r Forces 0 / 0 (0.0%)")
-    end
 
-    self.ui.deaths:SetText(string.format("Deaths %d  |  Penalty %s", state.deathCount, self:FormatTime(state.deathPenalty)))
+        local total = tonumber(state.forcesTotal) or 0
+        local current = tonumber(state.forcesCurrent) or 0
+        if total > 0 then
+            local pct = math.min(1, math.max(0, current / total))
+            self.ui.forcesBar:SetValue(pct)
+            if pct >= 1 then
+                self.ui.forcesText:SetText(string.format("|cff7CFC00[Done]|r Forces %d / %d (100.0%%)", total, total))
+            else
+                self.ui.forcesText:SetText(string.format("|cffBFBFBF[ ]|r Forces %d / %d (%.1f%%)", current, total, pct * 100))
+            end
+        else
+            self.ui.forcesBar:SetValue(0)
+            self.ui.forcesText:SetText("|cffBFBFBF[ ]|r Forces 0 / 0 (0.0%)")
+        end
+
+        self.ui.deaths:SetText(string.format("Deaths %d  |  Penalty %s", state.deathCount, self:FormatTime(state.deathPenalty)))
+    else
+        self.ui.affixRow:Hide()
+        self.ui.chest3:Hide()
+        self.ui.chest2:Hide()
+        self.ui.chest1:Hide()
+        self.ui.forcesBar:Hide()
+        self.ui.forcesText:Hide()
+        self.ui.deaths:Hide()
+    end
 
     for i = 1, #self.ui.objectiveRows do
         local row = self.ui.objectiveRows[i]
@@ -330,7 +362,11 @@ function ns:Render()
         if objective then
             row:Show()
             if objective.completed then
-                row:SetText(string.format("|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r", objective.text, self:FormatTime(objective.doneAt or state.elapsed)))
+                if isMythicPlus then
+                    row:SetText(string.format("|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r", objective.text, self:FormatTime(objective.doneAt or state.elapsed)))
+                else
+                    row:SetText(string.format("|cff7CFC00[Done]|r %s", objective.text))
+                end
             else
                 row:SetText(string.format("|cffBFBFBF[ ]|r %s", objective.text))
             end

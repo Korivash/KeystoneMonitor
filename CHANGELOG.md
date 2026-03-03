@@ -6,6 +6,42 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-03
+
+### Added
+
+- `Auto` tracked dungeon mode that automatically picks Normal, Heroic, or Mythic+ by current instance difficulty.
+- Dungeon mode selector in UI Studio Behavior: `Auto`, `Normal`, `Heroic`, and `Mythic+`.
+- Support for tracking Normal and Heroic dungeons in addition to Mythic+.
+- New profile field `dungeonMode` with import/export support.
+- Optional debug helpers:
+  - `/km debug` to toggle dungeon mode detection logging.
+  - `/km debug now` to print an immediate snapshot.
+
+### Changed
+
+- Runtime state sync is now mode-aware and follows the selected dungeon mode.
+- Normal/Heroic displays now focus on:
+  - Dungeon name
+  - In-dungeon elapsed timer
+  - Boss/objective completion list
+- Mythic+ display keeps full feature set (affixes, key level, chest breakpoints, forces, deaths/penalty, pace hints, records).
+- Mythic+ event handlers are now gated by selected mode to prevent cross-mode state noise.
+- Improved dungeon difficulty detection for Auto mode by using both difficulty ID and difficulty name.
+- Improved Mythic+ forces quantity fallback parsing.
+
+### Docs
+
+- Refreshed addon documentation to reflect multi-mode dungeon support.
+- Corrected command/alias documentation to match implemented slash commands.
+
+## [0.3.3] - 2026-02-25
+
+### Changed
+
+- Updated TOC interface for the latest WoW retail version (`120001`).
+- Bumped addon version to `0.3.3`.
+
 ## [0.3.1] - 2026-02-14
 
 ### Changed

@@ -1,5 +1,16 @@
 local addonName, ns = ...
 
+local function isMythicPlusTrackingEnabled()
+    local selectedMode = ns:GetSelectedDungeonMode()
+    if selectedMode == "MYTHIC_PLUS" then
+        return true
+    end
+    if selectedMode == "AUTO" and ns:GetCurrentDungeonMode() == "MYTHIC_PLUS" then
+        return true
+    end
+    return false
+end
+
 local function onLoaded(_, loadedName)
     if loadedName ~= addonName then
         return
@@ -11,14 +22,24 @@ end
 local function onThemeEvent()
     ns:ApplyTheme()
     ns:SyncChallengeState(false)
+    if ns:IsDebugModeEnabled() then
+        ns:PrintDungeonModeDebug("ENTER_WORLD")
+    end
 end
 
 local function onZoneOrDifficulty()
     ns:SyncChallengeState(true)
+    if ns:IsDebugModeEnabled() then
+        ns:PrintDungeonModeDebug("ZONE_OR_DIFF")
+    end
 end
 
 local function onChallengeStart()
+    if not isMythicPlusTrackingEnabled() then
+        return
+    end
     ns.state.inChallenge = true
+    ns.state.mode = "MYTHIC_PLUS"
     ns.state.challengeCompleted = false
     ns:RefreshChallengeData()
     ns:RefreshVisibility()
@@ -27,6 +48,9 @@ local function onChallengeStart()
 end
 
 local function onWorldTimerStart()
+    if not isMythicPlusTrackingEnabled() then
+        return
+    end
     ns.state.timerStarted = true
     ns:RefreshChallengeData()
     ns:Render()
@@ -34,6 +58,9 @@ local function onWorldTimerStart()
 end
 
 local function onDeathUpdate()
+    if not isMythicPlusTrackingEnabled() then
+        return
+    end
     ns:RefreshDeaths()
     ns:Render()
 end
@@ -44,17 +71,26 @@ local function onScenarioUpdate()
 end
 
 local function onChallengeCompleted()
+    if not isMythicPlusTrackingEnabled() then
+        return
+    end
     ns:HandleChallengeCompleted()
     ns:Render()
     ns:StopTicker()
 end
 
 local function onChallengeReset()
+    if not isMythicPlusTrackingEnabled() then
+        return
+    end
     ns:StopTicker()
     ns:SyncChallengeState(true)
 end
 
 local function onChallengeMapsUpdate()
+    if not isMythicPlusTrackingEnabled() then
+        return
+    end
     ns:InvalidateRunHistoryCache()
     ns:Render()
 end

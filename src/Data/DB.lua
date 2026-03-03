@@ -6,6 +6,7 @@ local defaults = {
         showWhenUnlocked = true,
         showBestTimedComparison = true,
         showPaceHints = true,
+        dungeonMode = "AUTO",
         previewScenario = "LIVE",
         useFloodgateCompletedPreview = false,
         position = {

@@ -24,7 +24,7 @@ Thanks for your interest in contributing to Keystone Monitor.
 
 ## UI Changes
 
-- Validate behavior both inside and outside active keys.
+- Validate behavior in all supported modes: `Auto`, `Normal`, `Heroic`, and `Mythic+`.
 - Ensure `/km` preview mode still allows practical positioning/tuning.
 - Test at multiple scales and opacity values.
 
@@ -34,6 +34,7 @@ Thanks for your interest in contributing to Keystone Monitor.
 - [ ] No Lua errors in-game
 - [ ] Slash commands still work
 - [ ] `/km` opens and updates correctly
+- [ ] Mode selection (`Auto/Normal/Heroic/Mythic+`) behaves correctly
 - [ ] Saved settings persist after `/reload`
 - [ ] Changelog updated when relevant
 
