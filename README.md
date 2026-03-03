@@ -1,13 +1,15 @@
 # Keystone Monitor
 
-## Dungeon Progress Tracker for Normal, Heroic, and Mythic+
+## Dungeon Progress Tracker for Follower, Normal, Heroic, Mythic 0, and Mythic+
 
 Keystone Monitor is a compact, highly customizable dungeon tracker for World of Warcraft Retail.
-It supports four tracking modes:
+It supports five tracking modes:
 
 - **Auto** (recommended)
+- **Follower**
 - **Normal**
 - **Heroic**
+- **Mythic 0**
 - **Mythic+**
 
 Created by **Korivash**.
@@ -21,7 +23,7 @@ Created by **Korivash**.
 
 ## What It Tracks
 
-### Normal / Heroic Mode
+### Follower / Normal / Heroic / Mythic 0 Mode
 
 - **Dungeon Name**
 - **Elapsed Dungeon Timer**
@@ -66,8 +68,10 @@ Created by **Korivash**.
 - Select preview scenario
 - Select tracked dungeon mode:
   - `Auto` (auto-detect by current dungeon difficulty)
+  - `Follower`
   - `Normal`
   - `Heroic`
+  - `Mythic 0`
   - `Mythic+`
 
 ### Visual Skinning
@@ -112,7 +116,7 @@ Created by **Korivash**.
 
 Found a bug or have a feature request? Please include:
 
-- What mode you were using (`Normal`, `Heroic`, or `Mythic+`)
+- What mode you were using (`Follower`, `Normal`, `Heroic`, `Mythic 0`, or `Mythic+`)
 - Description of issue
 - Expected behavior
 - Actual behavior

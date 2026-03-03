@@ -28,8 +28,10 @@ local PREVIEW_SCENARIO_OPTIONS = {
 
 local DUNGEON_MODE_OPTIONS = {
     { key = "AUTO", name = "Auto" },
+    { key = "FOLLOWER", name = "Follower" },
     { key = "NORMAL", name = "Normal" },
     { key = "HEROIC", name = "Heroic" },
+    { key = "MYTHIC_ZERO", name = "Mythic 0" },
     { key = "MYTHIC_PLUS", name = "Mythic+" },
 }
 
@@ -479,7 +481,12 @@ local function applyImportString(serialized)
         profile.showPaceHints = map.showPaceHints ~= "0"
     end
     if map.dungeonMode then
-        if map.dungeonMode == "AUTO" or map.dungeonMode == "NORMAL" or map.dungeonMode == "HEROIC" or map.dungeonMode == "MYTHIC_PLUS" then
+        if map.dungeonMode == "AUTO"
+            or map.dungeonMode == "FOLLOWER"
+            or map.dungeonMode == "NORMAL"
+            or map.dungeonMode == "HEROIC"
+            or map.dungeonMode == "MYTHIC_ZERO"
+            or map.dungeonMode == "MYTHIC_PLUS" then
             profile.dungeonMode = map.dungeonMode
         end
     end
@@ -645,6 +652,285 @@ local function openColorPickerForKey(frame, key, fallback)
     ColorPickerFrame:Show()
 end
 
+local function styleModernPanel(panel, bg, border)
+    panel:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    panel:SetBackdropColor(bg[1], bg[2], bg[3], bg[4] or 1)
+    panel:SetBackdropBorderColor(border[1], border[2], border[3], border[4] or 1)
+end
+
+local function styleModernInput(edit, width, height)
+    edit:SetSize(width, height or 22)
+    edit:SetAutoFocus(false)
+    edit:SetTextInsets(6, 6, 0, 0)
+    edit:SetJustifyH("LEFT")
+    if edit.SetBackdrop then
+        edit:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Buttons\\WHITE8X8",
+            edgeSize = 1,
+        })
+        edit:SetBackdropColor(0.05, 0.08, 0.12, 0.95)
+        edit:SetBackdropBorderColor(0.14, 0.34, 0.55, 0.92)
+    end
+    if edit.SetFontObject then
+        edit:SetFontObject("GameFontHighlightSmall")
+    elseif edit.SetNormalFontObject then
+        edit:SetNormalFontObject("GameFontHighlightSmall")
+    end
+    edit:SetTextColor(0.90, 0.96, 1.0, 1)
+end
+
+local function styleModernDropdown(holder)
+    local drop = holder and holder.dropdown
+    if not drop then
+        return
+    end
+    local name = drop:GetName()
+    if not name then
+        return
+    end
+    local left = _G[name .. "Left"]
+    local middle = _G[name .. "Middle"]
+    local right = _G[name .. "Right"]
+    local button = _G[name .. "Button"]
+    if left then left:SetAlpha(0) end
+    if middle then middle:SetAlpha(0) end
+    if right then right:SetAlpha(0) end
+    if button then button:SetAlpha(0.9) end
+
+    holder.bg = holder:CreateTexture(nil, "BACKGROUND")
+    holder.bg:SetPoint("TOPLEFT", holder, "TOPLEFT", -1, -16)
+    holder.bg:SetPoint("BOTTOMRIGHT", holder, "BOTTOMRIGHT", -132, -3)
+    holder.bg:SetColorTexture(0.05, 0.08, 0.12, 0.95)
+
+    holder.border = holder:CreateTexture(nil, "BORDER")
+    holder.border:SetPoint("TOPLEFT", holder.bg, "TOPLEFT", -1, 1)
+    holder.border:SetPoint("BOTTOMRIGHT", holder.bg, "BOTTOMRIGHT", 1, -1)
+    holder.border:SetColorTexture(0.14, 0.34, 0.55, 0.92)
+end
+
+local function createSection(parent, title, yOffset, height)
+    local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    frame:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, yOffset)
+    frame:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, yOffset)
+    frame:SetHeight(height)
+    styleModernPanel(frame, { 0.07, 0.10, 0.15, 0.92 }, { 0.11, 0.24, 0.39, 0.95 })
+
+    frame.title = label(frame, title, "GameFontNormal", "TOPLEFT", frame, "TOPLEFT", 12, -10)
+    frame.title:SetTextColor(0.72, 0.88, 1.0)
+    frame.rule = frame:CreateTexture(nil, "ARTWORK")
+    frame.rule:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -28)
+    frame.rule:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -28)
+    frame.rule:SetHeight(1)
+    frame.rule:SetColorTexture(0.12, 0.44, 0.72, 0.82)
+    return frame
+end
+
+local function attachSectionCollapse(section, targets, expandedHeight, collapsedHeight)
+    section._expandedHeight = expandedHeight or section:GetHeight()
+    section._collapsedHeight = collapsedHeight or 34
+    section._collapsed = false
+
+    local toggle = CreateFrame("Button", nil, section)
+    toggle:SetSize(18, 18)
+    toggle:SetPoint("TOPRIGHT", section, "TOPRIGHT", -10, -8)
+    toggle:SetText("-")
+    styleButton(toggle, { 0.10, 0.16, 0.24, 0.95 }, { 0.13, 0.20, 0.30, 0.98 }, { 0.18, 0.36, 0.56, 1.0 })
+
+    local function setCollapsed(collapsed)
+        section._collapsed = collapsed and true or false
+        section:SetHeight(section._collapsed and section._collapsedHeight or section._expandedHeight)
+        toggle:SetText(section._collapsed and "+" or "-")
+        for i = 1, #targets do
+            if section._collapsed then
+                targets[i]:Hide()
+            else
+                targets[i]:Show()
+            end
+        end
+    end
+
+    toggle:SetScript("OnClick", function()
+        setCollapsed(not section._collapsed)
+    end)
+    setCollapsed(false)
+end
+
+local function createToggleRow(parent, text, point, relTo, relPoint, x, y, onChange)
+    local row = CreateFrame("Button", nil, parent)
+    row:SetPoint(point, relTo, relPoint, x, y)
+    row:SetSize(460, 22)
+    row.value = false
+
+    row.label = label(row, text, "GameFontHighlightSmall", "LEFT", row, "LEFT", 0, 0)
+    row.label:SetTextColor(0.86, 0.93, 1.0)
+
+    row.track = row:CreateTexture(nil, "ARTWORK")
+    row.track:SetSize(36, 16)
+    row.track:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+
+    row.knob = row:CreateTexture(nil, "OVERLAY")
+    row.knob:SetSize(14, 14)
+    row.knob:SetPoint("LEFT", row.track, "LEFT", 1, 0)
+    row.knob:SetColorTexture(0.90, 0.96, 1.0, 1)
+
+    function row:SetChecked(isChecked)
+        self.value = isChecked and true or false
+        if self.value then
+            self.track:SetColorTexture(0.00, 0.70, 1.0, 0.95)
+            self.knob:ClearAllPoints()
+            self.knob:SetPoint("RIGHT", self.track, "RIGHT", -1, 0)
+        else
+            self.track:SetColorTexture(0.18, 0.22, 0.28, 0.95)
+            self.knob:ClearAllPoints()
+            self.knob:SetPoint("LEFT", self.track, "LEFT", 1, 0)
+        end
+    end
+
+    row:SetScript("OnEnter", function(self)
+        self.label:SetTextColor(0.94, 0.98, 1.0)
+    end)
+    row:SetScript("OnLeave", function(self)
+        self.label:SetTextColor(0.86, 0.93, 1.0)
+    end)
+    row:SetScript("OnClick", function(self)
+        self:SetChecked(not self.value)
+        if onChange then
+            onChange(self.value)
+        end
+    end)
+    row:SetChecked(false)
+    return row
+end
+
+local function createSliderRow(parent, titleText, minValue, maxValue, step, point, relTo, relPoint, x, y, formatter, onChange)
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetPoint(point, relTo, relPoint, x, y)
+    holder:SetSize(500, 54)
+
+    local slider = CreateFrame("Slider", nil, holder, "OptionsSliderTemplate")
+    slider:SetPoint("TOPLEFT", holder, "TOPLEFT", 0, -16)
+    slider:SetWidth(380)
+    slider:SetMinMaxValues(minValue, maxValue)
+    slider:SetValueStep(step)
+    styleSlider(slider, titleText, minValue, maxValue)
+
+    local input = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
+    input:SetPoint("LEFT", slider, "RIGHT", 14, 0)
+    styleModernInput(input, 84, 22)
+    input:SetScript("OnEnterPressed", function(edit)
+        edit:ClearFocus()
+        local raw = tonumber(edit:GetText())
+        if raw then
+            local clamped = clamp(raw, minValue, maxValue)
+            slider:SetValue(clamped)
+            if onChange then
+                onChange(clamped)
+            end
+        end
+    end)
+    input:SetScript("OnEscapePressed", function(edit)
+        edit:ClearFocus()
+    end)
+
+    slider:SetScript("OnValueChanged", function(_, value)
+        local rendered = formatter and formatter(value) or tostring(value)
+        slider.value:SetText(rendered)
+        input:SetText(rendered)
+        if onChange then
+            onChange(value)
+        end
+    end)
+
+    holder.slider = slider
+    holder.input = input
+    return holder
+end
+
+local function createTabButton(parent, text, iconText, onClick)
+    local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    button:SetSize(172, 34)
+    styleModernPanel(button, { 0.07, 0.10, 0.15, 0.95 }, { 0.12, 0.22, 0.33, 0.95 })
+
+    button.activeGlow = button:CreateTexture(nil, "BACKGROUND")
+    button.activeGlow:SetAllPoints()
+    button.activeGlow:SetColorTexture(0.00, 0.58, 1.0, 0.16)
+    button.activeGlow:Hide()
+
+    button.icon = label(button, iconText, "GameFontHighlightSmall", "LEFT", button, "LEFT", 9, 0)
+    button.icon:SetTextColor(0.54, 0.80, 1.0)
+    button.text = label(button, text, "GameFontHighlightSmall", "LEFT", button.icon, "RIGHT", 8, 0)
+    button.text:SetTextColor(0.83, 0.91, 0.98)
+
+    function button:SetSelected(selected)
+        if selected then
+            self:SetBackdropColor(0.09, 0.18, 0.28, 0.98)
+            self:SetBackdropBorderColor(0.10, 0.55, 0.94, 0.98)
+            self.activeGlow:Show()
+            self.text:SetTextColor(0.95, 0.98, 1.0)
+        else
+            self:SetBackdropColor(0.07, 0.10, 0.15, 0.95)
+            self:SetBackdropBorderColor(0.12, 0.22, 0.33, 0.95)
+            self.activeGlow:Hide()
+            self.text:SetTextColor(0.83, 0.91, 0.98)
+        end
+    end
+
+    button:SetScript("OnEnter", function(self)
+        if not self.selected then
+            self:SetBackdropColor(0.09, 0.14, 0.20, 0.95)
+            self:SetBackdropBorderColor(0.15, 0.31, 0.46, 0.95)
+        end
+    end)
+    button:SetScript("OnLeave", function(self)
+        if not self.selected then
+            self:SetBackdropColor(0.07, 0.10, 0.15, 0.95)
+            self:SetBackdropBorderColor(0.12, 0.22, 0.33, 0.95)
+        end
+    end)
+    button:SetScript("OnClick", function()
+        if onClick then
+            onClick()
+        end
+    end)
+    button:SetSelected(false)
+    return button
+end
+
+local function createScrollPanel(parent, width, height)
+    local scrollHost = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    scrollHost:SetSize(width, height)
+    styleModernPanel(scrollHost, { 0.04, 0.07, 0.11, 0.96 }, { 0.10, 0.27, 0.42, 0.95 })
+
+    local scroll = CreateFrame("ScrollFrame", nil, scrollHost, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", scrollHost, "TOPLEFT", 8, -8)
+    scroll:SetPoint("BOTTOMRIGHT", scrollHost, "BOTTOMRIGHT", -28, 8)
+
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(width - 44, height - 16)
+    scroll:SetScrollChild(content)
+
+    scrollHost.scroll = scroll
+    scrollHost.content = content
+    return scrollHost
+end
+
+local function refreshSliderRow(row, value, formatter)
+    if not row or not row.slider then
+        return
+    end
+    row.slider:SetValue(value)
+    local rendered = formatter and formatter(value) or tostring(value)
+    row.slider.value:SetText(rendered)
+    if row.input then
+        row.input:SetText(rendered)
+    end
+end
+
 function ns:RefreshOptionsUI()
     if not self.ui.options then
         return
@@ -654,19 +940,19 @@ function ns:RefreshOptionsUI()
     local profile = self.db.profile
     local appearance = profile.appearance
 
-    frame.lockCheck:SetChecked(profile.locked and true or false)
-    frame.showUnlockedCheck:SetChecked(profile.showWhenUnlocked and true or false)
-    frame.showBestTimedComparisonCheck:SetChecked(profile.showBestTimedComparison and true or false)
-    frame.showPaceHintsCheck:SetChecked(profile.showPaceHints and true or false)
-    frame.useClassColorCheck:SetChecked(appearance.useClassColor and true or false)
+    frame.lockToggle:SetChecked(profile.locked and true or false)
+    frame.showUnlockedToggle:SetChecked(profile.showWhenUnlocked and true or false)
+    frame.showBestTimedComparisonToggle:SetChecked(profile.showBestTimedComparison and true or false)
+    frame.showPaceHintsToggle:SetChecked(profile.showPaceHints and true or false)
+    frame.useClassColorToggle:SetChecked(appearance.useClassColor and true or false)
     dropdownSetValue(frame.dungeonModeDrop.dropdown, DUNGEON_MODE_OPTIONS, profile.dungeonMode or "AUTO")
     dropdownSetValue(frame.previewScenarioDrop.dropdown, PREVIEW_SCENARIO_OPTIONS, profile.previewScenario or "LIVE")
 
-    frame.widthSlider:SetValue(appearance.frameWidth or 350)
-    frame.heightSlider:SetValue(appearance.frameHeight or 248)
-    frame.scaleSlider:SetValue(profile.scale or 1)
-    frame.alphaSlider:SetValue(profile.alpha or 1)
-    frame.fontScaleSlider:SetValue(appearance.fontScale or 1)
+    refreshSliderRow(frame.widthSliderRow, appearance.frameWidth or 350, function(v) return tostring(math.floor(v + 0.5)) end)
+    refreshSliderRow(frame.heightSliderRow, appearance.frameHeight or 248, function(v) return tostring(math.floor(v + 0.5)) end)
+    refreshSliderRow(frame.scaleSliderRow, profile.scale or 1, function(v) return string.format("%.2f", v) end)
+    refreshSliderRow(frame.alphaSliderRow, profile.alpha or 1, function(v) return string.format("%.2f", v) end)
+    refreshSliderRow(frame.fontScaleSliderRow, appearance.fontScale or 1, function(v) return string.format("%.2f", v) end)
 
     dropdownSetValue(frame.titleFontDrop.dropdown, FONT_OPTIONS, appearance.titleFont or "FRIZQT")
     dropdownSetValue(frame.timerFontDrop.dropdown, FONT_OPTIONS, appearance.timerFont or "ARIALN")
@@ -699,7 +985,7 @@ end
 
 function ns:BuildOptionsUI()
     local frame = CreateFrame("Frame", "KeystoneMonitorOptionsFrame", UIParent, "BackdropTemplate")
-    frame:SetSize(940, 920)
+    frame:SetSize(1040, 760)
     frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
@@ -723,101 +1009,208 @@ function ns:BuildOptionsUI()
         ns.ui.previewMode = false
         ns:RefreshVisibility()
     end)
-    frame:SetBackdrop({
-        bgFile = "Interface\\Buttons\\WHITE8X8",
-        edgeFile = "Interface\\Buttons\\WHITE8X8",
-        edgeSize = 1,
-    })
-    frame:SetBackdropColor(0.04, 0.05, 0.07, 0.97)
-    frame:SetBackdropBorderColor(0.17, 0.20, 0.25, 1)
+    styleModernPanel(frame, { 0.04, 0.06, 0.09, 0.98 }, { 0.08, 0.35, 0.58, 0.95 })
     frame:Hide()
 
     local header = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     header:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
     header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
-    header:SetHeight(72)
-    header:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
-    header:SetBackdropColor(0.07, 0.10, 0.14, 1)
+    header:SetHeight(66)
+    styleModernPanel(header, { 0.05, 0.08, 0.12, 1.0 }, { 0.05, 0.20, 0.34, 0.95 })
 
     local accent = header:CreateTexture(nil, "ARTWORK")
     accent:SetPoint("BOTTOMLEFT", header, "BOTTOMLEFT", 0, 0)
     accent:SetPoint("BOTTOMRIGHT", header, "BOTTOMRIGHT", 0, 0)
     accent:SetHeight(2)
-    accent:SetColorTexture(0.33, 0.73, 1.00, 0.95)
+    accent:SetColorTexture(0.00, 0.70, 1.00, 0.95)
 
-    label(header, "Keystone Monitor UI STUDIO", "GameFontNormalLarge", "TOP", header, "TOP", 0, -12)
-    local sub = label(header, "Profiles, presets, and deep skinning", "GameFontHighlightSmall", "TOP", header, "TOP", 0, -31)
-    sub:SetTextColor(0.67, 0.76, 0.86)
+    label(header, "Keystone Monitor Control Studio", "GameFontNormalLarge", "LEFT", header, "LEFT", 14, 0)
+    local sub = label(header, "Modern dungeon tracking configuration", "GameFontHighlightSmall", "LEFT", header, "LEFT", 280, 0)
+    sub:SetTextColor(0.65, 0.80, 0.93)
 
-    local colWidth = 448
-    local gutter = 20
-    local topOffset = -18
+    local closeButton = CreateFrame("Button", nil, header)
+    closeButton:SetSize(70, 24)
+    closeButton:SetPoint("RIGHT", header, "RIGHT", -12, 0)
+    closeButton:SetText("Close")
+    styleButton(closeButton, { 0.13, 0.14, 0.17, 0.96 }, { 0.18, 0.19, 0.23, 0.98 }, { 0.28, 0.30, 0.35, 1.0 })
+    closeButton:SetScript("OnClick", function()
+        clearOptionsInputFocus(frame)
+        frame:Hide()
+    end)
 
-    local behavior = section(frame, "Behavior", "TOPLEFT", header, "BOTTOMLEFT", 12, topOffset, colWidth, 332)
-    local layout = section(frame, "Layout & Sizing", "TOPRIGHT", header, "BOTTOMRIGHT", -12, topOffset, colWidth, 320)
-    local fonts = section(frame, "Per-Element Fonts", "TOPLEFT", behavior, "BOTTOMLEFT", 0, -12, colWidth, 168)
-    local actions = section(frame, "Actions", "BOTTOM", frame, "BOTTOM", 0, 12, (colWidth * 2) + gutter, 92)
+    local leftPane = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    leftPane:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 10, -10)
+    leftPane:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 10)
+    leftPane:SetWidth(192)
+    styleModernPanel(leftPane, { 0.06, 0.09, 0.13, 0.95 }, { 0.10, 0.22, 0.36, 0.95 })
 
-    local profiles = section(frame, "Presets & Profile Import/Export", "TOPLEFT", fonts, "BOTTOMLEFT", 0, -12, colWidth, 200)
-    profiles:ClearAllPoints()
-    profiles:SetPoint("TOPLEFT", fonts, "BOTTOMLEFT", 0, -12)
-    profiles:SetPoint("BOTTOMLEFT", actions, "TOPLEFT", 0, 12)
-    profiles:SetWidth(colWidth)
+    local rightPane = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    rightPane:SetPoint("TOPLEFT", leftPane, "TOPRIGHT", 10, 0)
+    rightPane:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 10)
+    styleModernPanel(rightPane, { 0.04, 0.06, 0.09, 0.96 }, { 0.08, 0.25, 0.40, 0.95 })
 
-    local colors = section(frame, "Hex Skin Colors (RRGGBB or RRGGBBAA)", "TOPRIGHT", layout, "BOTTOMRIGHT", 0, -12, colWidth, 200)
-    colors:ClearAllPoints()
-    colors:SetPoint("TOPRIGHT", layout, "BOTTOMRIGHT", 0, -12)
-    colors:SetPoint("BOTTOMRIGHT", actions, "TOPRIGHT", 0, 12)
-    colors:SetWidth(colWidth)
+    local searchBox = CreateFrame("EditBox", nil, leftPane, "InputBoxTemplate")
+    searchBox:SetPoint("TOPLEFT", leftPane, "TOPLEFT", 10, -10)
+    styleModernInput(searchBox, 170, 22)
+    searchBox:SetMaxLetters(64)
+    searchBox:SetText("")
 
-    local lockCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
-    lockCheck:SetPoint("TOPLEFT", behavior, "TOPLEFT", 12, -30)
-    lockCheck.Text:SetText("Lock tracker position")
-    lockCheck:SetScript("OnClick", function(button)
-        ns.db.profile.locked = button:GetChecked() and true or false
+    local searchHint = label(leftPane, "Search tabs", "GameFontDisableSmall", "TOPLEFT", searchBox, "BOTTOMLEFT", 2, -2)
+    searchHint:SetTextColor(0.52, 0.68, 0.84)
+
+    local collapseButton = CreateFrame("Button", nil, leftPane)
+    collapseButton:SetSize(20, 20)
+    collapseButton:SetPoint("TOPRIGHT", leftPane, "TOPRIGHT", -8, -11)
+    collapseButton:SetText("<")
+    styleButton(collapseButton, { 0.08, 0.13, 0.20, 0.94 }, { 0.12, 0.19, 0.28, 0.98 }, { 0.18, 0.36, 0.56, 1.0 })
+
+    local tabs = {}
+    local tabOrder = {
+        { key = "GENERAL", label = "General", icon = "G" },
+        { key = "LAYOUT", label = "Layout", icon = "L" },
+        { key = "VISUAL", label = "Visual", icon = "V" },
+        { key = "FONTS", label = "Fonts", icon = "F" },
+        { key = "PROFILES", label = "Profiles", icon = "P" },
+    }
+
+    local panels = {}
+    local function makeTabPanel(key)
+        local panel = createScrollPanel(rightPane, 814, 664)
+        panel:SetPoint("TOPLEFT", rightPane, "TOPLEFT", 10, -10)
+        panel:Hide()
+        panels[key] = panel
+        return panel
+    end
+
+    local selectedTabKey = "GENERAL"
+    local function setTab(key)
+        selectedTabKey = key
+        for i = 1, #tabOrder do
+            local entry = tabOrder[i]
+            local button = tabs[entry.key]
+            local isSelected = entry.key == key
+            button.selected = isSelected
+            button:SetSelected(isSelected)
+            if panels[entry.key] then
+                if isSelected then
+                    panels[entry.key]:Show()
+                    if UIFrameFadeIn then
+                        UIFrameFadeIn(panels[entry.key], 0.12, 0.2, 1)
+                    end
+                else
+                    panels[entry.key]:Hide()
+                end
+            end
+        end
+    end
+
+    for i = 1, #tabOrder do
+        local entry = tabOrder[i]
+        local tab = createTabButton(leftPane, entry.label, entry.icon, function()
+            setTab(entry.key)
+        end)
+        tab:SetPoint("TOPLEFT", leftPane, "TOPLEFT", 10, -44 - ((i - 1) * 40))
+        tabs[entry.key] = tab
+    end
+
+    local sidebarExpanded = true
+    collapseButton:SetScript("OnClick", function()
+        sidebarExpanded = not sidebarExpanded
+        if sidebarExpanded then
+            leftPane:SetWidth(192)
+            searchBox:Show()
+            searchHint:Show()
+            collapseButton:SetText("<")
+            for i = 1, #tabOrder do
+                tabs[tabOrder[i].key].text:Show()
+            end
+        else
+            leftPane:SetWidth(60)
+            searchBox:Hide()
+            searchHint:Hide()
+            collapseButton:SetText(">")
+            for i = 1, #tabOrder do
+                tabs[tabOrder[i].key].text:Hide()
+            end
+        end
+    end)
+
+    searchBox:SetScript("OnTextChanged", function(edit)
+        local needle = string.lower(ns:Trim(edit:GetText() or ""))
+        if needle == "" then
+            for i = 1, #tabOrder do
+                tabs[tabOrder[i].key]:Show()
+            end
+            return
+        end
+        local firstMatch = nil
+        for i = 1, #tabOrder do
+            local entry = tabOrder[i]
+            local matches = string.find(string.lower(entry.label), needle, 1, true) ~= nil
+            if matches then
+                tabs[entry.key]:Show()
+                if not firstMatch then
+                    firstMatch = entry.key
+                end
+            else
+                tabs[entry.key]:Hide()
+            end
+        end
+        if firstMatch and firstMatch ~= selectedTabKey then
+            setTab(firstMatch)
+        end
+    end)
+
+    local generalPanel = makeTabPanel("GENERAL")
+    local layoutPanel = makeTabPanel("LAYOUT")
+    local visualPanel = makeTabPanel("VISUAL")
+    local fontsPanel = makeTabPanel("FONTS")
+    local profilesPanel = makeTabPanel("PROFILES")
+
+    local generalCore = createSection(generalPanel.content, "Core Tracking", 0, 236)
+    local lockToggle = createToggleRow(generalCore, "Lock tracker position", "TOPLEFT", generalCore, "TOPLEFT", 14, -44, function(value)
+        ns.db.profile.locked = value and true or false
         ns:RefreshVisibility()
         ns:Render()
     end)
-
-    local showUnlockedCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
-    showUnlockedCheck:SetPoint("TOPLEFT", lockCheck, "BOTTOMLEFT", 0, -10)
-    showUnlockedCheck.Text:SetText("Show tracker while unlocked")
-    showUnlockedCheck:SetScript("OnClick", function(button)
-        ns.db.profile.showWhenUnlocked = button:GetChecked() and true or false
+    local showUnlockedToggle = createToggleRow(generalCore, "Show tracker while unlocked", "TOPLEFT", lockToggle, "BOTTOMLEFT", 0, -10, function(value)
+        ns.db.profile.showWhenUnlocked = value and true or false
         ns:RefreshVisibility()
         ns:Render()
     end)
-
-    local showBestTimedComparisonCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
-    showBestTimedComparisonCheck:SetPoint("TOPLEFT", showUnlockedCheck, "BOTTOMLEFT", 0, -10)
-    showBestTimedComparisonCheck.Text:SetText("Show best timed vs current")
-    showBestTimedComparisonCheck:SetScript("OnClick", function(button)
-        ns.db.profile.showBestTimedComparison = button:GetChecked() and true or false
+    local showBestTimedComparisonToggle = createToggleRow(generalCore, "Show best timed comparison", "TOPLEFT", showUnlockedToggle, "BOTTOMLEFT", 0, -10, function(value)
+        ns.db.profile.showBestTimedComparison = value and true or false
+        ns:Render()
+    end)
+    local showPaceHintsToggle = createToggleRow(generalCore, "Show pace hints", "TOPLEFT", showBestTimedComparisonToggle, "BOTTOMLEFT", 0, -10, function(value)
+        ns.db.profile.showPaceHints = value and true or false
         ns:Render()
     end)
 
-    local useClassColorCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
-    useClassColorCheck:SetPoint("TOPLEFT", showBestTimedComparisonCheck, "BOTTOMLEFT", 0, -10)
-    useClassColorCheck.Text:SetText("Use class color for accent")
-    useClassColorCheck:SetScript("OnClick", function(button)
-        ns.db.profile.appearance.useClassColor = button:GetChecked() and true or false
-        ns:ApplyTheme()
-    end)
-
-    local showPaceHintsCheck = CreateFrame("CheckButton", nil, behavior, "ChatConfigCheckButtonTemplate")
-    showPaceHintsCheck:SetPoint("TOPLEFT", useClassColorCheck, "BOTTOMLEFT", 0, -10)
-    showPaceHintsCheck.Text:SetText("Show pace hints on tracker")
-    showPaceHintsCheck:SetScript("OnClick", function(button)
-        ns.db.profile.showPaceHints = button:GetChecked() and true or false
-        ns:Render()
-    end)
+    local generalAdvanced = createSection(generalPanel.content, "Advanced", -248, 180)
+    local dungeonModeDrop = makeDropdown(
+        generalAdvanced,
+        "Tracked Dungeon Mode",
+        DUNGEON_MODE_OPTIONS,
+        "TOPLEFT",
+        generalAdvanced,
+        "TOPLEFT",
+        14,
+        -38,
+        function(key)
+            ns.db.profile.dungeonMode = key
+            ns:SyncChallengeState(true)
+            ns:Render()
+        end
+    )
+    styleModernDropdown(dungeonModeDrop)
 
     local previewScenarioDrop = makeDropdown(
-        behavior,
+        generalAdvanced,
         "Preview Scenario",
         PREVIEW_SCENARIO_OPTIONS,
         "TOPLEFT",
-        showPaceHintsCheck,
+        dungeonModeDrop,
         "BOTTOMLEFT",
         0,
         -8,
@@ -826,106 +1219,53 @@ function ns:BuildOptionsUI()
             ns:Render()
         end
     )
+    styleModernDropdown(previewScenarioDrop)
+    attachSectionCollapse(generalAdvanced, { dungeonModeDrop, previewScenarioDrop }, 180, 38)
 
-    local dungeonModeDrop = makeDropdown(
-        behavior,
-        "Tracked Dungeon Mode",
-        DUNGEON_MODE_OPTIONS,
-        "TOPLEFT",
-        previewScenarioDrop,
-        "BOTTOMLEFT",
-        0,
-        -8,
-        function(key)
-            ns.db.profile.dungeonMode = key
-            ns:SyncChallengeState(true)
-            ns:Render()
-        end
-    )
-
-    local widthSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
-    widthSlider:SetPoint("TOPLEFT", layout, "TOPLEFT", 12, -32)
-    widthSlider:SetWidth(420)
-    widthSlider:SetMinMaxValues(280, 760)
-    widthSlider:SetValueStep(2)
-    styleSlider(widthSlider, "Frame Width", 280, 760)
-    widthSlider:SetScript("OnValueChanged", function(slider, value)
-        local rounded = math.floor(value + 0.5)
-        ns.db.profile.appearance.frameWidth = rounded
-        slider.value:SetText(tostring(rounded))
+    local layoutSection = createSection(layoutPanel.content, "Layout & Size", 0, 332)
+    local widthSliderRow = createSliderRow(layoutSection, "Frame Width", 280, 760, 2, "TOPLEFT", layoutSection, "TOPLEFT", 14, -42, function(v) return tostring(math.floor(v + 0.5)) end, function(v)
+        ns.db.profile.appearance.frameWidth = math.floor(v + 0.5)
+        ns:ApplyFrameSettings()
+    end)
+    local heightSliderRow = createSliderRow(layoutSection, "Frame Height", 200, 520, 2, "TOPLEFT", widthSliderRow, "BOTTOMLEFT", 0, -12, function(v) return tostring(math.floor(v + 0.5)) end, function(v)
+        ns.db.profile.appearance.frameHeight = math.floor(v + 0.5)
+        ns:ApplyFrameSettings()
+    end)
+    local scaleSliderRow = createSliderRow(layoutSection, "Frame Scale", 0.70, 1.80, 0.01, "TOPLEFT", heightSliderRow, "BOTTOMLEFT", 0, -12, function(v) return string.format("%.2f", v) end, function(v)
+        ns.db.profile.scale = tonumber(string.format("%.2f", v)) or 1
+        ns:ApplyFrameSettings()
+    end)
+    local alphaSliderRow = createSliderRow(layoutSection, "Panel Opacity", 0.00, 1.00, 0.01, "TOPLEFT", scaleSliderRow, "BOTTOMLEFT", 0, -12, function(v) return string.format("%.2f", v) end, function(v)
+        ns.db.profile.alpha = tonumber(string.format("%.2f", v)) or 1
         ns:ApplyFrameSettings()
     end)
 
-    local heightSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
-    heightSlider:SetPoint("TOPLEFT", widthSlider, "BOTTOMLEFT", 0, -36)
-    heightSlider:SetWidth(420)
-    heightSlider:SetMinMaxValues(200, 520)
-    heightSlider:SetValueStep(2)
-    styleSlider(heightSlider, "Frame Height", 200, 520)
-    heightSlider:SetScript("OnValueChanged", function(slider, value)
-        local rounded = math.floor(value + 0.5)
-        ns.db.profile.appearance.frameHeight = rounded
-        slider.value:SetText(tostring(rounded))
-        ns:ApplyFrameSettings()
+    local layoutActions = createSection(layoutPanel.content, "Layout Actions", -344, 118)
+    local resetPosButton = CreateFrame("Button", nil, layoutActions)
+    resetPosButton:SetSize(160, 24)
+    resetPosButton:SetPoint("TOPLEFT", layoutActions, "TOPLEFT", 14, -42)
+    resetPosButton:SetText("Reset Position")
+    styleButton(resetPosButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
+    resetPosButton:SetScript("OnClick", function()
+        ns.db.profile.position.x = DEFAULT_X
+        ns.db.profile.position.y = DEFAULT_Y
+        ns:RestorePosition()
+        ns:Print("Position reset.")
     end)
+    attachSectionCollapse(layoutActions, { resetPosButton }, 118, 38)
 
-    local scaleSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
-    scaleSlider:SetPoint("TOPLEFT", heightSlider, "BOTTOMLEFT", 0, -36)
-    scaleSlider:SetWidth(420)
-    scaleSlider:SetMinMaxValues(0.70, 1.80)
-    scaleSlider:SetValueStep(0.01)
-    styleSlider(scaleSlider, "Frame Scale", 0.70, 1.80)
-    scaleSlider:SetScript("OnValueChanged", function(slider, value)
-        local rounded = tonumber(string.format("%.2f", value)) or 1
-        ns.db.profile.scale = rounded
-        slider.value:SetText(string.format("%.2f", rounded))
-        ns:ApplyFrameSettings()
-    end)
-
-    local alphaSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
-    alphaSlider:SetPoint("TOPLEFT", scaleSlider, "BOTTOMLEFT", 0, -36)
-    alphaSlider:SetWidth(420)
-    alphaSlider:SetMinMaxValues(0.00, 1.00)
-    alphaSlider:SetValueStep(0.01)
-    styleSlider(alphaSlider, "Frame Opacity", 0.00, 1.00)
-    alphaSlider:SetScript("OnValueChanged", function(slider, value)
-        local rounded = tonumber(string.format("%.2f", value)) or 1
-        ns.db.profile.alpha = rounded
-        slider.value:SetText(string.format("%.2f", rounded))
-        ns:ApplyFrameSettings()
-    end)
-
-    local fontScaleSlider = CreateFrame("Slider", nil, layout, "OptionsSliderTemplate")
-    fontScaleSlider:SetPoint("TOPLEFT", alphaSlider, "BOTTOMLEFT", 0, -36)
-    fontScaleSlider:SetWidth(420)
-    fontScaleSlider:SetMinMaxValues(0.70, 1.60)
-    fontScaleSlider:SetValueStep(0.01)
-    styleSlider(fontScaleSlider, "Font Scale", 0.70, 1.60)
-    fontScaleSlider:SetScript("OnValueChanged", function(slider, value)
-        local rounded = tonumber(string.format("%.2f", value)) or 1
-        ns.db.profile.appearance.fontScale = rounded
-        slider.value:SetText(string.format("%.2f", rounded))
-        ns:ApplyFrameSettings()
-    end)
-
-    local titleFontDrop = makeDropdown(fonts, "Title Font", FONT_OPTIONS, "TOPLEFT", fonts, "TOPLEFT", 12, -28, function(key)
-        ns.db.profile.appearance.titleFont = key
-        ns:ApplyFrameSettings()
-    end)
-    local timerFontDrop = makeDropdown(fonts, "Timer Font", FONT_OPTIONS, "TOPLEFT", titleFontDrop, "BOTTOMLEFT", 0, -8, function(key)
-        ns.db.profile.appearance.timerFont = key
-        ns:ApplyFrameSettings()
-    end)
-    local bodyFontDrop = makeDropdown(fonts, "Body Font", FONT_OPTIONS, "TOPLEFT", timerFontDrop, "BOTTOMLEFT", 0, -8, function(key)
-        ns.db.profile.appearance.bodyFont = key
-        ns:ApplyFrameSettings()
+    local visualSection = createSection(visualPanel.content, "Color & Theme", 0, 340)
+    local useClassColorToggle = createToggleRow(visualSection, "Use class color for accent", "TOPLEFT", visualSection, "TOPLEFT", 14, -44, function(value)
+        ns.db.profile.appearance.useClassColor = value and true or false
+        ns:ApplyTheme()
     end)
 
     frame.colorRows = {}
     for i = 1, #COLOR_KEYS do
         local entry = COLOR_KEYS[i]
-        local row = makeHexRow(colors, entry.label, "TOPLEFT", colors, "TOPLEFT", 12, -30 - ((i - 1) * 26))
+        local row = makeHexRow(visualSection, entry.label, "TOPLEFT", useClassColorToggle, "BOTTOMLEFT", 0, -12 - ((i - 1) * 26))
         frame.colorRows[entry.key] = row
+        styleModernInput(row.input, 120, 20)
         row.swatchButton:SetScript("OnClick", function()
             openColorPickerForKey(frame, entry.key, entry.fallback)
         end)
@@ -939,12 +1279,57 @@ function ns:BuildOptionsUI()
         end)
     end
 
-    local hint = label(colors, "Tip: click swatch to open color wheel, or type hex manually (53B9FFCC)", "GameFontDisableSmall", "BOTTOMLEFT", colors, "BOTTOMLEFT", 12, 10)
-    hint:SetTextColor(0.62, 0.68, 0.75)
+    local applyColorsButton = CreateFrame("Button", nil, visualSection)
+    applyColorsButton:SetSize(150, 24)
+    applyColorsButton:SetPoint("TOPLEFT", visualSection, "TOPLEFT", 14, -308)
+    applyColorsButton:SetText("Apply Colors")
+    styleButton(applyColorsButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
+    applyColorsButton:SetScript("OnClick", function()
+        applyColorsFromInputs(frame)
+        ns:Print("Appearance colors applied.")
+    end)
 
-    local presetDrop = makeDropdown(profiles, "Theme Preset", PRESET_OPTIONS, "TOPLEFT", profiles, "TOPLEFT", 12, -28, function() end)
-    label(profiles, "Export Profile", "GameFontNormalSmall", "TOPLEFT", presetDrop, "BOTTOMLEFT", 0, -10)
-    local exportBox = makeInput(profiles, 420, "TOPLEFT", presetDrop, "BOTTOMLEFT", 0, -30)
+    local visualDensity = createSection(visualPanel.content, "Density", -352, 110)
+    local fontScaleSliderRow = createSliderRow(visualDensity, "Font Scale", 0.70, 1.60, 0.01, "TOPLEFT", visualDensity, "TOPLEFT", 14, -42, function(v) return string.format("%.2f", v) end, function(v)
+        ns.db.profile.appearance.fontScale = tonumber(string.format("%.2f", v)) or 1
+        ns:ApplyFrameSettings()
+    end)
+
+    local fontsSection = createSection(fontsPanel.content, "Typography", 0, 200)
+    local titleFontDrop = makeDropdown(fontsSection, "Title Font", FONT_OPTIONS, "TOPLEFT", fontsSection, "TOPLEFT", 14, -38, function(key)
+        ns.db.profile.appearance.titleFont = key
+        ns:ApplyFrameSettings()
+    end)
+    local timerFontDrop = makeDropdown(fontsSection, "Timer Font", FONT_OPTIONS, "TOPLEFT", titleFontDrop, "BOTTOMLEFT", 0, -8, function(key)
+        ns.db.profile.appearance.timerFont = key
+        ns:ApplyFrameSettings()
+    end)
+    local bodyFontDrop = makeDropdown(fontsSection, "Body Font", FONT_OPTIONS, "TOPLEFT", timerFontDrop, "BOTTOMLEFT", 0, -8, function(key)
+        ns.db.profile.appearance.bodyFont = key
+        ns:ApplyFrameSettings()
+    end)
+    styleModernDropdown(titleFontDrop)
+    styleModernDropdown(timerFontDrop)
+    styleModernDropdown(bodyFontDrop)
+
+    local profilesSection = createSection(profilesPanel.content, "Presets & Profiles", 0, 320)
+    local presetDrop = makeDropdown(profilesSection, "Theme Preset", PRESET_OPTIONS, "TOPLEFT", profilesSection, "TOPLEFT", 14, -38, function() end)
+    styleModernDropdown(presetDrop)
+
+    local applyPresetButton = CreateFrame("Button", nil, profilesSection)
+    applyPresetButton:SetSize(140, 24)
+    applyPresetButton:SetPoint("TOPLEFT", presetDrop, "BOTTOMLEFT", 0, -8)
+    applyPresetButton:SetText("Apply Preset")
+    styleButton(applyPresetButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
+    applyPresetButton:SetScript("OnClick", function()
+        local selected = UIDropDownMenu_GetSelectedValue(presetDrop.dropdown) or "KEYSTONE"
+        applyPreset(selected)
+    end)
+
+    local exportLabel = label(profilesSection, "Export Profile", "GameFontNormalSmall", "TOPLEFT", applyPresetButton, "BOTTOMLEFT", 0, -10)
+    exportLabel:SetTextColor(0.85, 0.92, 0.99)
+    local exportBox = makeInput(profilesSection, 620, "TOPLEFT", exportLabel, "BOTTOMLEFT", 0, -6)
+    styleModernInput(exportBox, 620, 22)
     exportBox:SetScript("OnEditFocusGained", function(edit)
         edit:HighlightText()
     end)
@@ -952,8 +1337,8 @@ function ns:BuildOptionsUI()
         edit:ClearFocus()
     end)
 
-    local generateExportButton = CreateFrame("Button", nil, profiles, "UIPanelButtonTemplate")
-    generateExportButton:SetSize(132, 24)
+    local generateExportButton = CreateFrame("Button", nil, profilesSection)
+    generateExportButton:SetSize(150, 24)
     generateExportButton:SetPoint("TOPLEFT", exportBox, "BOTTOMLEFT", 0, -8)
     generateExportButton:SetText("Generate Export")
     styleButton(generateExportButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
@@ -964,8 +1349,10 @@ function ns:BuildOptionsUI()
         exportBox:HighlightText()
     end)
 
-    label(profiles, "Import Profile", "GameFontNormalSmall", "TOPLEFT", generateExportButton, "BOTTOMLEFT", 0, -10)
-    local importBox = makeInput(profiles, 420, "TOPLEFT", generateExportButton, "BOTTOMLEFT", 0, -30)
+    local importLabel = label(profilesSection, "Import Profile", "GameFontNormalSmall", "TOPLEFT", generateExportButton, "BOTTOMLEFT", 0, -10)
+    importLabel:SetTextColor(0.85, 0.92, 0.99)
+    local importBox = makeInput(profilesSection, 620, "TOPLEFT", importLabel, "BOTTOMLEFT", 0, -6)
+    styleModernInput(importBox, 620, 22)
     importBox:SetScript("OnEnterPressed", function(edit)
         edit:ClearFocus()
         local ok, msg = applyImportString(edit:GetText())
@@ -980,8 +1367,8 @@ function ns:BuildOptionsUI()
         edit:ClearFocus()
     end)
 
-    local importButton = CreateFrame("Button", nil, profiles, "UIPanelButtonTemplate")
-    importButton:SetSize(132, 24)
+    local importButton = CreateFrame("Button", nil, profilesSection)
+    importButton:SetSize(150, 24)
     importButton:SetPoint("TOPLEFT", importBox, "BOTTOMLEFT", 0, -8)
     importButton:SetText("Import Profile")
     styleButton(importButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
@@ -995,31 +1382,9 @@ function ns:BuildOptionsUI()
         end
     end)
 
-    local applyColorsButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
-    applyColorsButton:SetSize(120, 24)
-    applyColorsButton:SetPoint("CENTER", actions, "CENTER", -256, -6)
-    applyColorsButton:SetText("Apply Colors")
-    styleButton(applyColorsButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
-    applyColorsButton:SetScript("OnClick", function()
-        applyColorsFromInputs(frame)
-        ns:Print("Appearance colors applied.")
-    end)
-
-    local resetPosButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
-    resetPosButton:SetSize(120, 24)
-    resetPosButton:SetPoint("LEFT", applyColorsButton, "RIGHT", 8, 0)
-    resetPosButton:SetText("Reset Position")
-    styleButton(resetPosButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
-    resetPosButton:SetScript("OnClick", function()
-        ns.db.profile.position.x = DEFAULT_X
-        ns.db.profile.position.y = DEFAULT_Y
-        ns:RestorePosition()
-        ns:Print("Position reset.")
-    end)
-
-    local refreshHistoryButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
-    refreshHistoryButton:SetSize(120, 24)
-    refreshHistoryButton:SetPoint("LEFT", resetPosButton, "RIGHT", 8, 0)
+    local refreshHistoryButton = CreateFrame("Button", nil, profilesSection)
+    refreshHistoryButton:SetSize(180, 24)
+    refreshHistoryButton:SetPoint("LEFT", importButton, "RIGHT", 8, 0)
     refreshHistoryButton:SetText("Refresh M+ Data")
     styleButton(refreshHistoryButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
     refreshHistoryButton:SetScript("OnClick", function()
@@ -1027,40 +1392,32 @@ function ns:BuildOptionsUI()
         ns:Render()
         ns:Print("Reloaded best times from Blizzard M+ history.")
     end)
+    attachSectionCollapse(
+        profilesSection,
+        { presetDrop, applyPresetButton, exportLabel, exportBox, generateExportButton, importLabel, importBox, importButton, refreshHistoryButton },
+        320,
+        38
+    )
 
-    local applyPresetButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
-    applyPresetButton:SetSize(120, 24)
-    applyPresetButton:SetPoint("LEFT", refreshHistoryButton, "RIGHT", 8, 0)
-    applyPresetButton:SetText("Apply Preset")
-    styleButton(applyPresetButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
-    applyPresetButton:SetScript("OnClick", function()
-        local selected = UIDropDownMenu_GetSelectedValue(presetDrop.dropdown) or "KEYSTONE"
-        applyPreset(selected)
-    end)
-
-    local closeButton = CreateFrame("Button", nil, actions, "UIPanelButtonTemplate")
-    closeButton:SetSize(120, 24)
-    closeButton:SetPoint("LEFT", applyPresetButton, "RIGHT", 8, 0)
-    closeButton:SetText("Close")
-    styleButton(closeButton, { 0.15, 0.15, 0.17, 0.95 }, { 0.20, 0.20, 0.23, 0.98 }, { 0.30, 0.32, 0.37, 1 })
-    closeButton:SetScript("OnClick", function()
-        clearOptionsInputFocus(frame)
-        frame:Hide()
-    end)
+    generalPanel.content:SetHeight(470)
+    layoutPanel.content:SetHeight(480)
+    visualPanel.content:SetHeight(500)
+    fontsPanel.content:SetHeight(260)
+    profilesPanel.content:SetHeight(430)
 
     self.ui.options = frame
-    frame.lockCheck = lockCheck
-    frame.showUnlockedCheck = showUnlockedCheck
-    frame.showBestTimedComparisonCheck = showBestTimedComparisonCheck
-    frame.showPaceHintsCheck = showPaceHintsCheck
+    frame.lockToggle = lockToggle
+    frame.showUnlockedToggle = showUnlockedToggle
+    frame.showBestTimedComparisonToggle = showBestTimedComparisonToggle
+    frame.showPaceHintsToggle = showPaceHintsToggle
+    frame.useClassColorToggle = useClassColorToggle
     frame.dungeonModeDrop = dungeonModeDrop
     frame.previewScenarioDrop = previewScenarioDrop
-    frame.useClassColorCheck = useClassColorCheck
-    frame.widthSlider = widthSlider
-    frame.heightSlider = heightSlider
-    frame.scaleSlider = scaleSlider
-    frame.alphaSlider = alphaSlider
-    frame.fontScaleSlider = fontScaleSlider
+    frame.widthSliderRow = widthSliderRow
+    frame.heightSliderRow = heightSliderRow
+    frame.scaleSliderRow = scaleSliderRow
+    frame.alphaSliderRow = alphaSliderRow
+    frame.fontScaleSliderRow = fontScaleSliderRow
     frame.titleFontDrop = titleFontDrop
     frame.timerFontDrop = timerFontDrop
     frame.bodyFontDrop = bodyFontDrop
@@ -1068,4 +1425,6 @@ function ns:BuildOptionsUI()
     frame.exportBox = exportBox
     frame.importBox = importBox
     frame.closeButton = closeButton
+
+    setTab("GENERAL")
 end

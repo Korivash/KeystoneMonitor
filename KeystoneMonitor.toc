@@ -1,8 +1,8 @@
 ## Interface: 120001
 ## Title: Dungeon Progress & Boss Tracker - Keystone Monitor
-## Notes: Compact class-colored dungeon tracker for Normal, Heroic, and Mythic+.
+## Notes: Compact class-colored dungeon tracker for Follower, Normal, Heroic, Mythic 0, and Mythic+.
 ## Author: Korivash
-## Version: 0.4.0
+## Version: 0.5.1
 ## IconTexture: Interface\AddOns\KeystoneMonitor\addon_icon
 ## SavedVariables: KeystoneMonitorDB
 ## Category-enUS: Mythic+ Dungeons

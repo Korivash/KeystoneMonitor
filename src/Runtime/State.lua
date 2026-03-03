@@ -2,12 +2,21 @@ local _, ns = ...
 
 local MODE_AUTO = "AUTO"
 local MODE_MYTHIC_PLUS = "MYTHIC_PLUS"
+local MODE_MYTHIC_ZERO = "MYTHIC_ZERO"
 local MODE_HEROIC = "HEROIC"
 local MODE_NORMAL = "NORMAL"
+local MODE_FOLLOWER = "FOLLOWER"
 
-local M_PLUS_DIFFICULTIES = {
+local MYTHIC_PLUS_DIFFICULTIES = {
     [8] = true,
+}
+
+local MYTHIC_ZERO_DIFFICULTIES = {
     [23] = true,
+}
+
+local FOLLOWER_DIFFICULTIES = {
+    [205] = true,
 }
 
 local function newRuntimeState()
@@ -101,13 +110,18 @@ end
 
 function ns:IsInMythicPlusInstance()
     local _, instanceType, difficultyID = GetInstanceInfo()
-    local isMythicPlus = M_PLUS_DIFFICULTIES[difficultyID] and true or false
+    local isMythicPlus = MYTHIC_PLUS_DIFFICULTIES[difficultyID] and true or false
     return instanceType == "party" and isMythicPlus
 end
 
 function ns:GetSelectedDungeonMode()
     local configured = self.db and self.db.profile and self.db.profile.dungeonMode
-    if configured == MODE_AUTO or configured == MODE_NORMAL or configured == MODE_HEROIC or configured == MODE_MYTHIC_PLUS then
+    if configured == MODE_AUTO
+        or configured == MODE_FOLLOWER
+        or configured == MODE_NORMAL
+        or configured == MODE_HEROIC
+        or configured == MODE_MYTHIC_ZERO
+        or configured == MODE_MYTHIC_PLUS then
         return configured
     end
     return MODE_AUTO
@@ -119,14 +133,29 @@ function ns:GetCurrentDungeonMode()
         return nil
     end
 
-    if M_PLUS_DIFFICULTIES[difficultyID] then
+    if FOLLOWER_DIFFICULTIES[difficultyID] then
+        return MODE_FOLLOWER
+    end
+
+    if MYTHIC_PLUS_DIFFICULTIES[difficultyID] then
         return MODE_MYTHIC_PLUS
     end
 
+    if MYTHIC_ZERO_DIFFICULTIES[difficultyID] then
+        return MODE_MYTHIC_ZERO
+    end
+
+    local localizedMythic = (PLAYER_DIFFICULTY6 or "Mythic"):lower()
     local localizedNormal = (PLAYER_DIFFICULTY1 or "Normal"):lower()
     local localizedHeroic = (PLAYER_DIFFICULTY2 or "Heroic"):lower()
     local currentDifficultyName = tostring(difficultyName or ""):lower()
     if currentDifficultyName ~= "" then
+        if currentDifficultyName:find("follower", 1, true) then
+            return MODE_FOLLOWER
+        end
+        if currentDifficultyName:find(localizedMythic, 1, true) then
+            return MODE_MYTHIC_ZERO
+        end
         if currentDifficultyName:find(localizedNormal, 1, true) then
             return MODE_NORMAL
         end

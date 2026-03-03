@@ -6,6 +6,43 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-03-03
+
+### Fixed
+
+- Fixed options UI startup error on some clients where `EditBox:SetNormalFontObject` is unavailable.
+- Updated modern input styling to use a safe font-object API fallback path.
+
+## [0.5.0] - 2026-03-03
+
+### Added
+
+- New modern tabbed options UI layout with left sidebar navigation (`General`, `Layout`, `Visual`, `Fonts`, `Profiles`).
+- Sidebar search for quick tab discovery.
+- Sidebar collapse/expand mode.
+- Slider controls with paired numeric input boxes.
+- Collapsible options sections for advanced configuration density.
+
+### Changed
+
+- Complete visual redesign of options UI to a black/blue modern theme with cleaner hierarchy and modular panels.
+- Updated options controls to reusable component patterns for better maintainability.
+
+## [0.4.1] - 2026-03-03
+
+### Added
+
+- Added tracked dungeon modes for `Follower` and `Mythic 0` in UI Studio.
+
+### Fixed
+
+- Fixed auto-mode difficulty detection to correctly classify `Mythic 0` separately from `Mythic+`.
+- Fixed dungeon mode detection to recognize `Follower` dungeons.
+
+### Changed
+
+- Updated non-Mythic+ tracker labeling to show `Follower Dungeon` and `Mythic 0 Dungeon`.
+
 ## [0.4.0] - 2026-03-03
 
 ### Added

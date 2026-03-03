@@ -261,6 +261,10 @@ function ns:Render()
     else
         if state.mode == "HEROIC" then
             self.ui.recordText:SetText("Heroic Dungeon")
+        elseif state.mode == "MYTHIC_ZERO" then
+            self.ui.recordText:SetText("Mythic 0 Dungeon")
+        elseif state.mode == "FOLLOWER" then
+            self.ui.recordText:SetText("Follower Dungeon")
         else
             self.ui.recordText:SetText("Normal Dungeon")
         end
