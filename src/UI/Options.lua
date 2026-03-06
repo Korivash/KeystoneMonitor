@@ -2,6 +2,7 @@ local _, ns = ...
 
 local DEFAULT_X = 0
 local DEFAULT_Y = 120
+local SUPPORT_URL = "https://ko-fi.com/korivash"
 
 local COLOR_KEYS = {
     { key = "accentColor", label = "Accent", fallback = "53B9FFFF" },
@@ -308,6 +309,9 @@ local function clearOptionsInputFocus(frame)
     end
     if frame.importBox and frame.importBox.ClearFocus then
         frame.importBox:ClearFocus()
+    end
+    if frame.supportLinkBox and frame.supportLinkBox.ClearFocus then
+        frame.supportLinkBox:ClearFocus()
     end
 
     if frame.colorRows then
@@ -967,6 +971,10 @@ function ns:RefreshOptionsUI()
         updateColorPreview(frame, entry.key, value)
     end
 
+    if frame.supportLinkBox then
+        frame.supportLinkBox:SetText(SUPPORT_URL)
+    end
+
     frame.exportBox:SetText(buildExportString())
 end
 
@@ -1222,6 +1230,34 @@ function ns:BuildOptionsUI()
     styleModernDropdown(previewScenarioDrop)
     attachSectionCollapse(generalAdvanced, { dungeonModeDrop, previewScenarioDrop }, 180, 38)
 
+    local supportSection = createSection(generalPanel.content, "Support", -440, 120)
+    local supportLabel = label(supportSection, "Support Me Here", "GameFontNormalSmall", "TOPLEFT", supportSection, "TOPLEFT", 14, -42)
+    supportLabel:SetTextColor(0.85, 0.92, 0.99)
+    local supportLinkBox = makeInput(supportSection, 520, "TOPLEFT", supportLabel, "BOTTOMLEFT", 0, -6)
+    styleModernInput(supportLinkBox, 520, 22)
+    supportLinkBox:SetMaxLetters(512)
+    supportLinkBox:SetText(SUPPORT_URL)
+    supportLinkBox:SetScript("OnEditFocusGained", function(edit)
+        edit:SetText(SUPPORT_URL)
+        edit:HighlightText()
+    end)
+    supportLinkBox:SetScript("OnEscapePressed", function(edit)
+        edit:SetText(SUPPORT_URL)
+        edit:ClearFocus()
+    end)
+
+    local selectSupportButton = CreateFrame("Button", nil, supportSection)
+    selectSupportButton:SetSize(150, 24)
+    selectSupportButton:SetPoint("TOPLEFT", supportLinkBox, "BOTTOMLEFT", 0, -8)
+    selectSupportButton:SetText("Select Link")
+    styleButton(selectSupportButton, { 0.09, 0.23, 0.36, 0.95 }, { 0.14, 0.30, 0.46, 0.98 }, { 0.21, 0.47, 0.70, 1 })
+    selectSupportButton:SetScript("OnClick", function()
+        supportLinkBox:SetText(SUPPORT_URL)
+        supportLinkBox:SetFocus()
+        supportLinkBox:HighlightText()
+    end)
+    attachSectionCollapse(supportSection, { supportLabel, supportLinkBox, selectSupportButton }, 120, 38)
+
     local layoutSection = createSection(layoutPanel.content, "Layout & Size", 0, 332)
     local widthSliderRow = createSliderRow(layoutSection, "Frame Width", 280, 760, 2, "TOPLEFT", layoutSection, "TOPLEFT", 14, -42, function(v) return tostring(math.floor(v + 0.5)) end, function(v)
         ns.db.profile.appearance.frameWidth = math.floor(v + 0.5)
@@ -1399,7 +1435,7 @@ function ns:BuildOptionsUI()
         38
     )
 
-    generalPanel.content:SetHeight(470)
+    generalPanel.content:SetHeight(600)
     layoutPanel.content:SetHeight(480)
     visualPanel.content:SetHeight(500)
     fontsPanel.content:SetHeight(260)
@@ -1424,6 +1460,7 @@ function ns:BuildOptionsUI()
     frame.presetDrop = presetDrop
     frame.exportBox = exportBox
     frame.importBox = importBox
+    frame.supportLinkBox = supportLinkBox
     frame.closeButton = closeButton
 
     setTab("GENERAL")
