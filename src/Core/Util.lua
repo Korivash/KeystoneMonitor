@@ -86,6 +86,22 @@ function ns:HexToRGBA(input, fallbackR, fallbackG, fallbackB, fallbackA)
     return r, g, b, a
 end
 
+local AFFIX_NAME_STRIP = {
+    "Xal'atath's", "Challenger's", "Bargain:", "Eternus's",
+    "Trial:", "Dusk", "of", "the", "Sands", "Timeways", "Twilight",
+}
+
+function ns:CleanAffixName(name)
+    if type(name) ~= "string" then
+        return name
+    end
+    local result = name
+    for i = 1, #AFFIX_NAME_STRIP do
+        result = result:gsub(AFFIX_NAME_STRIP[i], "")
+    end
+    return self:Trim(result)
+end
+
 function ns:IsDebugModeEnabled()
     return self.debugMode and true or false
 end

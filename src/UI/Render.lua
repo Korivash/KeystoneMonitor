@@ -283,11 +283,15 @@ function ns:Render()
             local penalty = tonumber(state.deathPenalty) or 0
             local limit = tonumber(state.timeLimit) or 0
             local effective = elapsed + penalty
-            if effective <= (limit * 0.6) then
+            local tl = state.timeLimits
+            local t3 = (tl and tl[3]) or (limit * 0.6)
+            local t2 = (tl and tl[2]) or (limit * 0.8)
+            local t1 = (tl and tl[1]) or limit
+            if effective <= t3 then
                 self.ui.statusText:SetText("|cff7CFC00PACE: +3|r")
-            elseif effective <= (limit * 0.8) then
+            elseif effective <= t2 then
                 self.ui.statusText:SetText("|cff53B9FFPACE: +2|r")
-            elseif effective <= limit then
+            elseif effective <= t1 then
                 self.ui.statusText:SetText("|cffFFD966PACE: +1|r")
             else
                 self.ui.statusText:SetText("|cffFF6666PACE: Overtime|r")
@@ -329,9 +333,13 @@ function ns:Render()
             self.ui.chest2:SetText("+2 --:--")
             self.ui.chest1:SetText("+1 --:--")
         else
-            self.ui.chest3:SetText("+3 " .. self:FormatTime((limit * 0.6) - state.elapsed))
-            self.ui.chest2:SetText("+2 " .. self:FormatTime((limit * 0.8) - state.elapsed))
-            self.ui.chest1:SetText("+1 " .. self:FormatTime(limit - state.elapsed))
+            local tl = state.timeLimits
+            local t3 = (tl and tl[3]) or (limit * 0.6)
+            local t2 = (tl and tl[2]) or (limit * 0.8)
+            local t1 = (tl and tl[1]) or limit
+            self.ui.chest3:SetText("+3 " .. self:FormatTime(t3 - state.elapsed))
+            self.ui.chest2:SetText("+2 " .. self:FormatTime(t2 - state.elapsed))
+            self.ui.chest1:SetText("+1 " .. self:FormatTime(t1 - state.elapsed))
         end
 
         local total = tonumber(state.forcesTotal) or 0
@@ -339,7 +347,7 @@ function ns:Render()
         if total > 0 then
             local pct = math.min(1, math.max(0, current / total))
             self.ui.forcesBar:SetValue(pct)
-            if pct >= 1 then
+            if state.forcesCompleted or pct >= 1 then
                 self.ui.forcesText:SetText(string.format("|cff7CFC00[Done]|r Forces %d / %d (100.0%%)", total, total))
             else
                 self.ui.forcesText:SetText(string.format("|cffBFBFBF[ ]|r Forces %d / %d (%.1f%%)", current, total, pct * 100))

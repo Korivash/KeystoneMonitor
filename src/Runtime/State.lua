@@ -30,6 +30,7 @@ local function newRuntimeState()
         runStartTime = nil,
         elapsed = 0,
         timeLimit = 0,
+        timeLimits = {},
         mapID = nil,
         instanceID = nil,
         mapName = "Mythic+",
@@ -38,10 +39,14 @@ local function newRuntimeState()
         affixes = {},
         weeklyAffixIDs = {},
         weeklyAffixes = {},
+        hasChallengersPeril = false,
         deathCount = 0,
         deathPenalty = 0,
+        deathDetails = {},
         forcesCurrent = 0,
         forcesTotal = 0,
+        forcesCompleted = false,
+        forcesCompletionTime = nil,
         objectives = {},
     }
 end
@@ -79,7 +84,7 @@ function ns:RefreshWeeklyAffixes()
         for i = 1, #affixIDs do
             local affixID = affixIDs[i]
             local name = C_ChallengeMode.GetAffixInfo(affixID)
-            self.state.weeklyAffixes[#self.state.weeklyAffixes + 1] = name or tostring(affixID)
+            self.state.weeklyAffixes[#self.state.weeklyAffixes + 1] = self:CleanAffixName(name) or tostring(affixID)
         end
     end
 end
@@ -240,18 +245,34 @@ function ns:RefreshMeta()
         self.state.level = tonumber(level) or 0
         wipe(self.state.affixIDs)
         wipe(self.state.affixes)
+        local hasPeril = false
         if affixIDs and C_ChallengeMode.GetAffixInfo then
             for i = 1, #affixIDs do
                 local affixID = affixIDs[i]
                 self.state.affixIDs[#self.state.affixIDs + 1] = affixID
+                if affixID == 152 then
+                    hasPeril = true
+                end
                 local name = C_ChallengeMode.GetAffixInfo(affixID)
-                self.state.affixes[#self.state.affixes + 1] = name or tostring(affixID)
+                self.state.affixes[#self.state.affixes + 1] = self:CleanAffixName(name) or tostring(affixID)
             end
         end
+        self.state.hasChallengersPeril = hasPeril
     else
         self.state.level = 0
+        self.state.hasChallengersPeril = false
         wipe(self.state.affixIDs)
         wipe(self.state.affixes)
+    end
+
+    -- Compute per-chest time limits, adjusted when Challenger's Peril is active.
+    -- Peril reduces the time bonus of the +90s bracket differently from the base %s.
+    local limit = self.state.timeLimit
+    if self.state.hasChallengersPeril and limit > 0 then
+        local base = limit - 90
+        self.state.timeLimits = { limit, (base * 0.8) + 90, (base * 0.6) + 90 }
+    else
+        self.state.timeLimits = { limit, limit * 0.8, limit * 0.6 }
     end
 end
 
@@ -274,7 +295,7 @@ function ns:GetActiveAffixDisplayData()
         local name, description, fileDataID = C_ChallengeMode.GetAffixInfo(affixID)
         items[#items + 1] = {
             id = affixID,
-            name = name or tostring(affixID),
+            name = self:CleanAffixName(name) or tostring(affixID),
             description = description or "",
             icon = fileDataID,
         }
@@ -326,8 +347,10 @@ end
 
 function ns:RefreshObjectives()
     wipe(self.state.objectives)
-    self.state.forcesCurrent = 0
     self.state.forcesTotal = 0
+    -- forcesCurrent is intentionally not reset here.
+    -- The scenario API can briefly report 0 at run completion, which would
+    -- cause the bar to flicker empty. We only allow it to increase.
 
     if not C_Scenario or not C_Scenario.GetStepInfo then
         return
@@ -351,7 +374,15 @@ function ns:RefreshObjectives()
                     if not quantity then
                         quantity = tonumber((info.quantityString or ""):match("(%d+)")) or 0
                     end
-                    self.state.forcesCurrent = quantity
+                    if quantity > self.state.forcesCurrent then
+                        self.state.forcesCurrent = quantity
+                    end
+                    if self.state.forcesTotal > 0
+                            and self.state.forcesCurrent >= self.state.forcesTotal
+                            and not self.state.forcesCompleted then
+                        self.state.forcesCompleted = true
+                        self.state.forcesCompletionTime = self.state.elapsed
+                    end
                 end
             else
                 local row = {
@@ -360,8 +391,13 @@ function ns:RefreshObjectives()
                     doneAt = nil,
                 }
                 if row.completed then
-                    local elapsed = tonumber(info.elapsed) or 0
-                    row.doneAt = math.max(0, self.state.elapsed - elapsed)
+                    local criteriaElapsed = tonumber(info.elapsed) or 0
+                    local worldElapsed = select(2, GetWorldElapsedTime(1))
+                    if worldElapsed and worldElapsed > 0 then
+                        row.doneAt = math.max(0, worldElapsed - criteriaElapsed)
+                    else
+                        row.doneAt = math.max(0, self.state.elapsed - criteriaElapsed)
+                    end
                 end
                 self.state.objectives[#self.state.objectives + 1] = row
             end

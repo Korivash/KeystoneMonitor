@@ -1,6 +1,6 @@
 local _, ns = ...
 
-local updateInterval = 0.15
+local updateInterval = 0.10
 local objectiveInterval = 0.35
 
 function ns:StartTicker()
