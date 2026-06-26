@@ -51,6 +51,17 @@ local function newRuntimeState()
     }
 end
 
+local function getCriteriaQuantity(info)
+    local quantityString = info and info.quantityString
+    if quantityString then
+        local quantity = tonumber(quantityString:match("(%d+)"))
+        if quantity then
+            return quantity
+        end
+    end
+    return tonumber(info and info.quantity) or 0
+end
+
 function ns:RefreshWeeklyAffixes()
     wipe(self.state.weeklyAffixIDs)
     wipe(self.state.weeklyAffixes)
@@ -347,7 +358,6 @@ end
 
 function ns:RefreshObjectives()
     wipe(self.state.objectives)
-    self.state.forcesTotal = 0
     -- forcesCurrent is intentionally not reset here.
     -- The scenario API can briefly report 0 at run completion, which would
     -- cause the bar to flicker empty. We only allow it to increase.
@@ -369,11 +379,8 @@ function ns:RefreshObjectives()
         if info then
             if info.isWeightedProgress and info.totalQuantity and info.totalQuantity > 0 then
                 if self.state.mode == MODE_MYTHIC_PLUS then
-                    self.state.forcesTotal = tonumber(info.totalQuantity) or 0
-                    local quantity = tonumber(info.quantity)
-                    if not quantity then
-                        quantity = tonumber((info.quantityString or ""):match("(%d+)")) or 0
-                    end
+                    self.state.forcesTotal = tonumber(info.totalQuantity) or self.state.forcesTotal or 0
+                    local quantity = getCriteriaQuantity(info)
                     if quantity > self.state.forcesCurrent then
                         self.state.forcesCurrent = quantity
                     end
