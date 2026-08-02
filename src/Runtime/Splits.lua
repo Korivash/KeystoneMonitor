@@ -134,8 +134,31 @@ function ns:InvalidateRunHistoryCache()
 end
 
 function ns:RecordRunSplits()
-    -- Records come from Blizzard run history, not local SavedVariables.
     markRunHistoryDirty()
+
+    local state = self.state
+    local timeMs = tonumber(state.completionTimeMs)
+
+    if timeMs and timeMs > 0 and state.mapID then
+        local splits = {}
+        for i = 1, #state.objectives do
+            local doneAt = state.objectives[i].doneAt
+            if doneAt then
+                splits[i] = math.floor(doneAt)
+            end
+        end
+        self:SaveRunRecord("MP:" .. state.mapID, timeMs, splits, state.level)
+    end
+
+    self:AddHistoryEntry({
+        at = time(),
+        mode = "MYTHIC_PLUS",
+        name = state.mapName,
+        level = state.level,
+        timeSec = timeMs and (timeMs / 1000) or state.elapsed,
+        deaths = state.deathCount,
+        onTime = state.completedOnTime and true or false,
+    })
 
     if C_Timer then
         C_Timer.After(2, function()

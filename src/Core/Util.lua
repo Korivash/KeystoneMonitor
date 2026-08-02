@@ -37,6 +37,12 @@ function ns:FormatTime(totalSeconds)
     return string.format("%s%d:%02d", sign, minutes, secs)
 end
 
+function ns:FormatDelta(totalSeconds)
+    local seconds = tonumber(totalSeconds) or 0
+    local sign = seconds >= 0 and "+" or "-"
+    return sign .. self:FormatTime(math.abs(seconds))
+end
+
 function ns:Trim(text)
     if type(text) ~= "string" then
         return ""

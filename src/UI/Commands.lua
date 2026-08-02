@@ -58,6 +58,42 @@ function ns:RegisterSlashCommands()
             return
         end
 
+        if cmd == "history" then
+            local history = self.db.history or {}
+            if #history == 0 then
+                self:Print("No runs recorded yet.")
+                return
+            end
+            self:Print("Recent runs:")
+            for i = 1, math.min(#history, 10) do
+                local run = history[i]
+                local when = date("%m/%d %H:%M", run.at or 0)
+                local levelText = (run.level and run.level > 0) and string.format(" +%d", run.level) or ""
+                local resultText = ""
+                if run.mode == "MYTHIC_PLUS" then
+                    resultText = run.onTime and "  |cff7CFC00Timed|r" or "  |cffFF6666Depleted|r"
+                end
+                self:Print(string.format(
+                    "%s  %s%s  %s  Deaths %d%s",
+                    when,
+                    run.name or "?",
+                    levelText,
+                    self:FormatTime(run.timeSec or 0),
+                    run.deaths or 0,
+                    resultText
+                ))
+            end
+            return
+        end
+
+        if cmd == "resetrun" then
+            self:ClearRunSnapshot()
+            self._bossListKey = nil
+            self:SyncChallengeState(true)
+            self:Print("Current run tracking reset.")
+            return
+        end
+
         if cmd == "debug" then
             self.debugMode = not self:IsDebugModeEnabled()
             if self.debugMode then
@@ -74,6 +110,6 @@ function ns:RegisterSlashCommands()
             return
         end
 
-        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km debug, /km debug now")
+        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km history, /km resetrun, /km debug, /km debug now")
     end
 end

@@ -6,6 +6,17 @@ local MODE_MYTHIC_ZERO = "MYTHIC_ZERO"
 local MODE_HEROIC = "HEROIC"
 local MODE_NORMAL = "NORMAL"
 local MODE_FOLLOWER = "FOLLOWER"
+local MODE_TIMEWALKING = "TIMEWALKING"
+
+local VALID_MODES = {
+    [MODE_AUTO] = true,
+    [MODE_FOLLOWER] = true,
+    [MODE_NORMAL] = true,
+    [MODE_HEROIC] = true,
+    [MODE_TIMEWALKING] = true,
+    [MODE_MYTHIC_ZERO] = true,
+    [MODE_MYTHIC_PLUS] = true,
+}
 
 local MYTHIC_PLUS_DIFFICULTIES = {
     [8] = true,
@@ -19,6 +30,11 @@ local FOLLOWER_DIFFICULTIES = {
     [205] = true,
 }
 
+local TIMEWALKING_DIFFICULTIES = {
+    [24] = true,
+    [33] = true,
+}
+
 local function newRuntimeState()
     return {
         inChallenge = false,
@@ -28,6 +44,7 @@ local function newRuntimeState()
         completionTimeMs = nil,
         timerStarted = false,
         runStartTime = nil,
+        runKey = nil,
         elapsed = 0,
         timeLimit = 0,
         timeLimits = {},
@@ -42,11 +59,13 @@ local function newRuntimeState()
         hasChallengersPeril = false,
         deathCount = 0,
         deathPenalty = 0,
-        deathDetails = {},
+        deathLog = {},
         forcesCurrent = 0,
         forcesTotal = 0,
         forcesCompleted = false,
         forcesCompletionTime = nil,
+        bossesDone = 0,
+        bossesTotal = 0,
         objectives = {},
     }
 end
@@ -65,6 +84,7 @@ end
 function ns:RefreshWeeklyAffixes()
     wipe(self.state.weeklyAffixIDs)
     wipe(self.state.weeklyAffixes)
+    self._affixCacheDirty = true
 
     local affixIDs = {}
 
@@ -109,6 +129,7 @@ end
 
 function ns:ResetRuntimeState()
     self.state = newRuntimeState()
+    self._affixCacheDirty = true
 end
 
 function ns:IsChallengeActive()
@@ -132,12 +153,7 @@ end
 
 function ns:GetSelectedDungeonMode()
     local configured = self.db and self.db.profile and self.db.profile.dungeonMode
-    if configured == MODE_AUTO
-        or configured == MODE_FOLLOWER
-        or configured == MODE_NORMAL
-        or configured == MODE_HEROIC
-        or configured == MODE_MYTHIC_ZERO
-        or configured == MODE_MYTHIC_PLUS then
+    if configured and VALID_MODES[configured] then
         return configured
     end
     return MODE_AUTO
@@ -161,22 +177,30 @@ function ns:GetCurrentDungeonMode()
         return MODE_MYTHIC_ZERO
     end
 
+    if TIMEWALKING_DIFFICULTIES[difficultyID] then
+        return MODE_TIMEWALKING
+    end
+
     local localizedMythic = (PLAYER_DIFFICULTY6 or "Mythic"):lower()
     local localizedNormal = (PLAYER_DIFFICULTY1 or "Normal"):lower()
     local localizedHeroic = (PLAYER_DIFFICULTY2 or "Heroic"):lower()
+    local localizedTimewalking = (PLAYER_DIFFICULTY_TIMEWALKER or "Timewalking"):lower()
     local currentDifficultyName = tostring(difficultyName or ""):lower()
     if currentDifficultyName ~= "" then
         if currentDifficultyName:find("follower", 1, true) then
             return MODE_FOLLOWER
         end
+        if currentDifficultyName:find(localizedTimewalking, 1, true) then
+            return MODE_TIMEWALKING
+        end
         if currentDifficultyName:find(localizedMythic, 1, true) then
             return MODE_MYTHIC_ZERO
         end
-        if currentDifficultyName:find(localizedNormal, 1, true) then
-            return MODE_NORMAL
-        end
         if currentDifficultyName:find(localizedHeroic, 1, true) then
             return MODE_HEROIC
+        end
+        if currentDifficultyName:find(localizedNormal, 1, true) then
+            return MODE_NORMAL
         end
     end
 
@@ -224,6 +248,7 @@ function ns:RefreshMeta()
     local mode = self.state.mode or MODE_MYTHIC_PLUS
     local instanceName, _, _, _, _, _, _, instanceID = GetInstanceInfo()
     self.state.instanceID = tonumber(instanceID) or nil
+    self._affixCacheDirty = true
 
     if mode ~= MODE_MYTHIC_PLUS then
         self.state.mapID = nil
@@ -276,8 +301,6 @@ function ns:RefreshMeta()
         wipe(self.state.affixes)
     end
 
-    -- Compute per-chest time limits, adjusted when Challenger's Peril is active.
-    -- Peril reduces the time bonus of the +90s bracket differently from the base %s.
     local limit = self.state.timeLimit
     if self.state.hasChallengersPeril and limit > 0 then
         local base = limit - 90
@@ -287,10 +310,18 @@ function ns:RefreshMeta()
     end
 end
 
+local affixDisplayCache = {}
+
 function ns:GetActiveAffixDisplayData()
-    local items = {}
+    if not self._affixCacheDirty then
+        return affixDisplayCache
+    end
+
+    wipe(affixDisplayCache)
+    self._affixCacheDirty = false
+
     if not C_ChallengeMode or not C_ChallengeMode.GetAffixInfo then
-        return items
+        return affixDisplayCache
     end
 
     local sourceIDs = self.state.affixIDs
@@ -298,20 +329,20 @@ function ns:GetActiveAffixDisplayData()
         sourceIDs = self.state.weeklyAffixIDs
     end
     if not sourceIDs or #sourceIDs == 0 then
-        return items
+        return affixDisplayCache
     end
 
     for i = 1, #sourceIDs do
         local affixID = sourceIDs[i]
         local name, description, fileDataID = C_ChallengeMode.GetAffixInfo(affixID)
-        items[#items + 1] = {
+        affixDisplayCache[#affixDisplayCache + 1] = {
             id = affixID,
             name = self:CleanAffixName(name) or tostring(affixID),
             description = description or "",
             icon = fileDataID,
         }
     end
-    return items
+    return affixDisplayCache
 end
 
 function ns:RefreshTimer()
@@ -331,6 +362,10 @@ function ns:RefreshTimer()
         return
     end
 
+    if self.state.challengeCompleted then
+        return
+    end
+
     if not self.state.runStartTime then
         self.state.runStartTime = GetTime()
     end
@@ -340,7 +375,7 @@ end
 
 function ns:RefreshDeaths()
     if self.state.mode ~= MODE_MYTHIC_PLUS then
-        self.state.deathCount = 0
+        self.state.deathCount = #(self.state.deathLog or {})
         self.state.deathPenalty = 0
         return
     end
@@ -357,59 +392,92 @@ function ns:RefreshDeaths()
 end
 
 function ns:RefreshObjectives()
-    wipe(self.state.objectives)
-    -- forcesCurrent is intentionally not reset here.
-    -- The scenario API can briefly report 0 at run completion, which would
-    -- cause the bar to flicker empty. We only allow it to increase.
+    local state = self.state
+    if state.mode ~= MODE_MYTHIC_PLUS then
+        return false
+    end
 
     if not C_Scenario or not C_Scenario.GetStepInfo then
-        return
+        return false
     end
     if not C_ScenarioInfo or not C_ScenarioInfo.GetCriteriaInfo then
-        return
+        return false
     end
 
     local _, _, criteriaCount = C_Scenario.GetStepInfo()
     if not criteriaCount or criteriaCount <= 0 then
-        return
+        if #state.objectives > 0 then
+            wipe(state.objectives)
+            return true
+        end
+        return false
     end
+
+    local changed = false
+    local rowCount = 0
 
     for i = 1, criteriaCount do
         local info = C_ScenarioInfo.GetCriteriaInfo(i)
         if info then
             if info.isWeightedProgress and info.totalQuantity and info.totalQuantity > 0 then
-                if self.state.mode == MODE_MYTHIC_PLUS then
-                    self.state.forcesTotal = tonumber(info.totalQuantity) or self.state.forcesTotal or 0
-                    local quantity = getCriteriaQuantity(info)
-                    if quantity > self.state.forcesCurrent then
-                        self.state.forcesCurrent = quantity
-                    end
-                    if self.state.forcesTotal > 0
-                            and self.state.forcesCurrent >= self.state.forcesTotal
-                            and not self.state.forcesCompleted then
-                        self.state.forcesCompleted = true
-                        self.state.forcesCompletionTime = self.state.elapsed
-                    end
+                local total = tonumber(info.totalQuantity) or 0
+                if total > 0 and total ~= state.forcesTotal then
+                    state.forcesTotal = total
+                    changed = true
+                end
+                local quantity = getCriteriaQuantity(info)
+                if quantity > state.forcesCurrent then
+                    state.forcesCurrent = quantity
+                    changed = true
+                end
+                if state.forcesTotal > 0
+                        and state.forcesCurrent >= state.forcesTotal
+                        and not state.forcesCompleted then
+                    state.forcesCompleted = true
+                    state.forcesCompletionTime = state.elapsed
+                    changed = true
                 end
             else
-                local row = {
-                    text = info.description or ("Objective " .. i),
-                    completed = info.completed and true or false,
-                    doneAt = nil,
-                }
-                if row.completed then
-                    local criteriaElapsed = tonumber(info.elapsed) or 0
-                    local worldElapsed = select(2, GetWorldElapsedTime(1))
-                    if worldElapsed and worldElapsed > 0 then
-                        row.doneAt = math.max(0, worldElapsed - criteriaElapsed)
+                rowCount = rowCount + 1
+                local row = state.objectives[rowCount]
+                if not row then
+                    row = {}
+                    state.objectives[rowCount] = row
+                    changed = true
+                end
+
+                local text = info.description or ("Objective " .. i)
+                local completed = info.completed and true or false
+
+                if row.text ~= text then
+                    row.text = text
+                    changed = true
+                end
+                if row.completed ~= completed then
+                    row.completed = completed
+                    changed = true
+                    if completed then
+                        local criteriaElapsed = tonumber(info.elapsed) or 0
+                        local worldElapsed = select(2, GetWorldElapsedTime(1))
+                        if worldElapsed and worldElapsed > 0 then
+                            row.doneAt = math.max(0, worldElapsed - criteriaElapsed)
+                        else
+                            row.doneAt = math.max(0, state.elapsed - criteriaElapsed)
+                        end
                     else
-                        row.doneAt = math.max(0, self.state.elapsed - criteriaElapsed)
+                        row.doneAt = nil
                     end
                 end
-                self.state.objectives[#self.state.objectives + 1] = row
             end
         end
     end
+
+    for i = #state.objectives, rowCount + 1, -1 do
+        state.objectives[i] = nil
+        changed = true
+    end
+
+    return changed
 end
 
 function ns:HandleChallengeCompleted()
@@ -423,8 +491,6 @@ function ns:HandleChallengeCompleted()
         end
     end
 
-    -- Preserve the final in-run snapshot on the UI after completion.
-    -- Some challenge APIs clear immediately and would zero out stats if re-polled here.
     if self.state.completionTimeMs then
         self.state.elapsed = (tonumber(self.state.completionTimeMs) or 0) / 1000
         self.state.timerStarted = true
@@ -439,6 +505,7 @@ function ns:HandleChallengeCompleted()
     end
 
     self:RecordRunSplits()
+    self:UpdateDeathWatcher()
 end
 
 ns:ResetRuntimeState()

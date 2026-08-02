@@ -1,131 +1,120 @@
 # Keystone Monitor
 
-## Dungeon Progress Tracker for Follower, Normal, Heroic, Mythic 0, and Mythic+
+A compact, class-colored dungeon tracker for World of Warcraft that covers **every** 5-player dungeon mode — Follower, Normal, Heroic, Timewalking, Mythic 0, and Mythic+ — from classic dungeons all the way through Midnight content.
 
-Keystone Monitor is a compact, highly customizable dungeon tracker for World of Warcraft Retail.
-It supports five tracking modes:
+Keystone Monitor replaces the default objective tracker during dungeon runs with a clean, movable panel showing your timer, boss progress, enemy forces, deaths, and personal records, then gets out of your way when the run is over.
 
-- **Auto** (recommended)
-- **Follower**
-- **Normal**
-- **Heroic**
-- **Mythic 0**
-- **Mythic+**
+![Icon](keystone.png)
 
-Created by **Korivash**.
+---
 
-## Project Docs
+## Features
 
-- [Changelog](CHANGELOG.md)
-- [Roadmap](ROADMAP.md)
-- [Contributing](CONTRIBUTING.md)
-- [Support](SUPPORT.md)
+### Mythic+
+- **Full keystone timer** with the +1 / +2 / +3 chest thresholds, including correct math when Challenger's Peril is active.
+- **Pace hints** — a live readout of which chest level your current pace (elapsed time + death penalty) is tracking toward: `PACE: +3`, `PACE: +2`, `PACE: +1`, or `Overtime`.
+- **Enemy forces bar** with exact count and percentage, marked `[Done]` with the completion timestamp once 100% is reached.
+- **Deaths and time penalty** for the run, straight from the game's official death count.
+- **Affix icons** with hover tooltips for the active keystone (or the current weekly affixes outside a run).
+- **Best-time comparison** — pulls your best timed run for the current map from Blizzard's Mythic+ run history and shows a live delta against your current pace.
+- **Boss objectives with kill times**, plus split deltas against your best recorded run (green = ahead, red = behind).
+- **Automatic keystone insertion** — open the Font of Power and your keystone is slotted from your bags automatically (can be disabled).
 
-## What It Tracks
+### All other dungeon modes (Follower / Normal / Heroic / Timewalking / Mythic 0)
+- **Boss roster detection** via the Encounter Journal the moment you zone in, so you can see every boss in the dungeon before you pull it.
+- **Live boss progress** — bosses flip to `[Engaged]` when you pull them and `[Done]` with a clear time when they die, with a progress bar (`Bosses 2 / 4`).
+- **Completion detection** — when the last boss dies the run is marked `COMPLETE` with your total clear time.
+- **Personal best clear times** saved per dungeon and difficulty, with per-boss split deltas on future runs.
+- **Death tracking** for the whole party, even though these modes have no built-in death counter.
+- These modes have no dungeon timer, so no clock is shown by default. An optional **stopwatch** can be enabled for speedrunning (timing always runs silently in the background to power records and splits).
 
-### Follower / Normal / Heroic / Mythic 0 Mode
+### Everywhere
+- **Death log tooltip** — hover the Deaths line to see exactly who died and when, class-colored.
+- **Run history** — the last 30 runs (any mode) with times, deaths, and Timed/Depleted results for keys. View with `/km history`.
+- **Crash-proof runs** — an in-progress dungeon run survives `/reload`, disconnects, and briefly stepping out of the instance. Timer, boss kills, and deaths all restore automatically.
+- **Objective tracker replacement** — Blizzard's quest tracker is hidden while a run is active and restored afterward.
 
-- **Dungeon Name**
-- **Elapsed Dungeon Timer**
-- **Boss/Objective Completion List**
-- **Clean UI Layout** focused on boss progress and time spent in dungeon
+## Performance
 
-### Mythic+ Mode
+Keystone Monitor is built to be effectively invisible in your frame times:
 
-- **Active Dungeon & Key Level**
-- **Run Timer & Time Limit Display** (`elapsed/limit`)
-- **Chest Breakpoints** (`+3`, `+2`, `+1`)
-- **Enemy Forces Progress Bar**
-- **Death Count & Penalty Time**
-- **Scenario Objective Completion**
-- **Personal Best + Best Timed Comparison**
-- **Active Affix Icons** with tooltips
-- **Pace Hints** (`+3/+2/+1/Overtime`, optional)
-
-## Key Commands
-
-- `/km`: Open/close UI Studio
-- `/km unlock`: Unlock tracker position for drag
-- `/km lock`: Lock tracker position.
-- `/km show`: Show tracker while unlocked.
-- `/km hide`: Hide tracker while unlocked.
-- `/km reset`: Reset tracker position.
-- `/km debug`: Toggle mode detection debug logs.
-- `/km debug now`: Print current detection snapshot once.
-
-### Aliases
-
-- `/mplus`
-- `/keystonemonitor`
-
-## UI Studio (`/km`)
-
-### Behavior
-
-- Lock/unlock tracker movement
-- Show/hide while unlocked
-- Toggle pace hints
-- Select preview scenario
-- Select tracked dungeon mode:
-  - `Auto` (auto-detect by current dungeon difficulty)
-  - `Follower`
-  - `Normal`
-  - `Heroic`
-  - `Mythic 0`
-  - `Mythic+`
-
-### Visual Skinning
-
-- Hex color inputs for core UI elements
-- Clickable color swatches (WoW color picker)
-- Manual hex input (`RRGGBB` or `RRGGBBAA`)
-- Class-color or custom accent style
-
-### Fonts
-
-- Title font
-- Timer font
-- Body font
-
-### Presets & Profiles
-
-- Built-in visual presets
-- Profile export/import string support
-
-## Design Goals
-
-- **Fast readability** during combat and routing decisions
-- **Clear timer + objective context** at a glance
-- **Low clutter** overlay style
-- **Deep customization** without sacrificing performance
+- Timer text only redraws when the visible second changes — not every frame.
+- Objective data only re-renders when something actually changed.
+- Death tracking is event-driven (no combat log scanning — fully compatible with the Midnight combat log restrictions).
+- Every text element skips redundant updates, and affix/tooltip data is cached.
+- Event registration is dynamic: high-frequency events are only attached while a run is live.
 
 ## Installation
 
-### CurseForge (Recommended)
+**CurseForge:** install "Keystone Monitor" from the CurseForge app or website.
 
-- Install Keystone Monitor through CurseForge.
+**Manual:** download the release zip and extract it into your AddOns folder so it looks like:
 
-### Manual
+```
+World of Warcraft\_retail_\Interface\AddOns\KeystoneMonitor\KeystoneMonitor.toc
+```
 
-1. Place the addon folder in:
-   `World of Warcraft/_retail_/Interface/AddOns/`
-2. Ensure the folder is exactly `KeystoneMonitor`
-3. Run `/reload` in game
+## Slash Commands
+
+| Command | Effect |
+|---|---|
+| `/km` (or `/keystonemonitor`, `/mplus`) | Open the options window |
+| `/km unlock` | Unlock the tracker so it can be dragged |
+| `/km lock` | Lock the tracker in place |
+| `/km show` | Show the tracker while unlocked |
+| `/km hide` | Hide the tracker outside active runs |
+| `/km reset` | Reset the tracker position |
+| `/km history` | Print your recent runs |
+| `/km resetrun` | Discard the saved snapshot for the current run and start tracking fresh |
+| `/km debug` | Toggle mode-detection debug logging |
+| `/km debug now` | Print a one-off mode-detection report |
+
+## Options
+
+The options window (`/km`) is organized into tabs:
+
+- **General** — lock/unlock, visibility, best-timed comparison, pace hints, auto keystone insertion, the untimed-dungeon stopwatch, tracked dungeon mode (Auto or force a specific mode), and preview scenarios for styling the tracker without being in a dungeon.
+- **Layout** — frame width/height, scale, and opacity.
+- **Visual** — class-color accent or fully custom hex colors for every element (accent, background, border, text, timer, forces bar), with color pickers.
+- **Fonts** — separate font choices for title, timer, and body text, plus a global font scale.
+- **Profiles** — theme presets, and a compact export/import string so you can share your exact setup or move it between accounts.
+
+## Saved Data
+
+All settings and records live in `KeystoneMonitorDB` (account-wide SavedVariables):
+
+- `profile` — appearance and behavior settings.
+- `records` — best clear times and per-boss splits, keyed by dungeon and difficulty.
+- `history` — your last 30 runs.
+- `runtime` — the snapshot of an in-progress run (cleared automatically).
+
+## Requirements
+
+- World of Warcraft Retail, Interface `120007` (Midnight).
+- No libraries or dependencies — the addon is fully self-contained.
+
+## Project Structure
+
+```
+KeystoneMonitor.toc          Addon manifest
+KeystoneMonitor.lua          Version stamp
+src/Core/Core.lua            Lifecycle, mode sync, objective tracker hook
+src/Core/Util.lua            Formatting and color helpers
+src/Data/DB.lua              SavedVariables defaults and init
+src/Runtime/State.lua        Run state, mode detection, scenario objectives
+src/Runtime/Bosses.lua       Encounter Journal bosses, deaths, records, snapshots
+src/Runtime/Splits.lua       Mythic+ run history and best-time comparisons
+src/Runtime/Timer.lua        Update ticker
+src/Runtime/Events.lua       Event registration and dispatch
+src/UI/Render.lua            Tracker frame and rendering
+src/UI/Options.lua           Options window
+src/UI/Commands.lua          Slash commands
+```
 
 ## Support
 
-Found a bug or have a feature request? Please include:
+If you enjoy the addon, you can support development at [ko-fi.com/korivash](https://ko-fi.com/korivash).
 
-- What mode you were using (`Follower`, `Normal`, `Heroic`, `Mythic 0`, or `Mythic+`)
-- Description of issue
-- Expected behavior
-- Actual behavior
-- Lua error text (if any)
-- `/km` profile export string (if relevant)
-- Screenshot/video for UI issues
+## Author
 
-Discord: https://discord.gg/JbQQTbH4hR
-
-## Why Choose Keystone Monitor?
-
-Keystone Monitor focuses on practical, low-noise dungeon tracking that you can adapt to your UI quickly, with full support from entry-level dungeon runs to Mythic+ keys.
+**Korivash**

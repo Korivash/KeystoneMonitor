@@ -6,6 +6,50 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-02
+
+### Added
+
+- Timewalking dungeon support, completing coverage of every 5-player dungeon mode: Follower, Normal, Heroic, Timewalking, Mythic 0, and Mythic+.
+- Boss tracking for non-Mythic+ dungeons: the full boss roster is detected from the Encounter Journal on zone-in, bosses show `[Engaged]` while pulled and `[Done]` with a kill time when defeated, and a progress bar shows `Bosses X / Y`.
+- Automatic run completion detection for non-Mythic+ dungeons — the run is marked `COMPLETE` with the total clear time when the final boss dies.
+- Personal best clear times saved per dungeon and difficulty for every mode, shown on the tracker (`Best 12:34`).
+- Per-boss split deltas against your best recorded run, shown next to each kill time in green (ahead) or red (behind). Works in Mythic+ and all other modes.
+- Party death tracking in every mode, including modes with no built-in death counter.
+- Death log tooltip — hovering the Deaths line lists who died and when, class-colored, for the current run.
+- Run history: the last 30 runs across all modes with times, deaths, key levels, and Timed/Depleted results. New `/km history` command prints the most recent runs.
+- Run persistence — an in-progress run now survives `/reload`, disconnects, and briefly leaving the instance. Timer, boss kills, and deaths restore automatically. New `/km resetrun` command discards the saved snapshot and restarts tracking.
+- Automatic keystone insertion when opening the Font of Power, with a General options toggle (`Auto-insert keystone at the font`).
+- Optional stopwatch for untimed dungeon modes (General options toggle, off by default). Timing always runs in the background to power records, splits, and the death log.
+- Addon icon (`keystone.png`).
+
+### Changed
+
+- Untimed dungeon modes (Follower, Normal, Heroic, Timewalking, Mythic 0) no longer display a clock by default, since those modes have no dungeon timer.
+- Default profile refreshed: 288x258 frame, 0.99 scale, fully transparent panel background, unified accent/text/timer/bar coloring, and 1.16 font scale. The `Keystone Monitor Default` preset matches.
+- Non-Mythic+ tracker now shows the mode label together with your best time for the current dungeon.
+- Profile export/import strings now include the new settings and the Timewalking mode.
+
+### Fixed
+
+- Death tracking is fully compatible with Midnight's instanced combat log restrictions — the addon watches party unit health instead of the combat log, avoiding `ADDON_ACTION_FORBIDDEN` errors.
+- Non-Mythic+ dungeons previously showed an empty objective list; they now display real boss objectives.
+
+### Performance
+
+- Timer widgets only redraw when the visible second changes instead of ten times per second.
+- Objective data re-renders only when something actually changed, using in-place diffing.
+- Death and count updates are event-driven rather than polled.
+- All text elements skip redundant updates; affix display data and preview states are cached.
+- High-frequency events are registered only while a run is active.
+
+## [0.6.0] - 2026-06-26
+
+### Changed
+
+- Updated TOC interface for WoW Midnight (`120007`).
+- Internal state handling updates for the 12.0.7 client.
+
 ## [0.5.1] - 2026-03-03
 
 ### Fixed

@@ -41,7 +41,10 @@ local function onChallengeStart()
     ns.state.inChallenge = true
     ns.state.mode = "MYTHIC_PLUS"
     ns.state.challengeCompleted = false
+    ns.state.deathLog = {}
+    ns._deadUnits = {}
     ns:RefreshChallengeData()
+    ns:UpdateDeathWatcher()
     ns:RefreshVisibility()
     ns:Render()
     ns:StartTicker()
@@ -66,8 +69,9 @@ local function onDeathUpdate()
 end
 
 local function onScenarioUpdate()
-    ns:RefreshObjectives()
-    ns:Render()
+    if ns:RefreshObjectives() then
+        ns:Render()
+    end
 end
 
 local function onChallengeCompleted()
@@ -95,6 +99,22 @@ local function onChallengeMapsUpdate()
     ns:Render()
 end
 
+local function onEncounterStart(_, encounterID, encounterName)
+    ns:HandleEncounterStart(encounterID, encounterName)
+end
+
+local function onEncounterEnd(_, encounterID, encounterName, difficultyID, groupSize, success)
+    ns:HandleEncounterEnd(encounterID, encounterName, difficultyID, groupSize, success)
+end
+
+local function onUnitVitals(_, unit)
+    ns:HandleUnitVitalsEvent(unit)
+end
+
+local function onKeystoneReceptacleOpen()
+    ns:TryAutoSlotKeystone()
+end
+
 local handlers = {
     ADDON_LOADED = onLoaded,
     PLAYER_ENTERING_WORLD = onThemeEvent,
@@ -112,6 +132,17 @@ local handlers = {
     CHALLENGE_MODE_COMPLETED = onChallengeCompleted,
     CHALLENGE_MODE_RESET = onChallengeReset,
     CHALLENGE_MODE_MAPS_UPDATE = onChallengeMapsUpdate,
+    ENCOUNTER_START = onEncounterStart,
+    ENCOUNTER_END = onEncounterEnd,
+    CHALLENGE_MODE_KEYSTONE_RECEPTABLE_OPEN = onKeystoneReceptacleOpen,
+    UNIT_HEALTH = onUnitVitals,
+    UNIT_FLAGS = onUnitVitals,
+}
+
+local DEFERRED_EVENTS = {
+    ADDON_LOADED = true,
+    UNIT_HEALTH = true,
+    UNIT_FLAGS = true,
 }
 
 function ns:RegisterRuntimeEvents()
@@ -123,7 +154,7 @@ function ns:RegisterRuntimeEvents()
     end)
 
     for eventName in pairs(handlers) do
-        if eventName ~= "ADDON_LOADED" then
+        if not DEFERRED_EVENTS[eventName] then
             self.frame:RegisterEvent(eventName)
         end
     end

@@ -9,52 +9,88 @@ local FONT_PATHS = {
 
 local TIMER_FAILED_COLOR = "FFFF2A2E"
 
+local function setText(fontString, text)
+    if fontString._kmText ~= text then
+        fontString._kmText = text
+        fontString:SetText(text)
+    end
+end
+
+local function setTimerColor(fontString, r, g, b, a)
+    if fontString._kmR ~= r or fontString._kmG ~= g or fontString._kmB ~= b or fontString._kmA ~= a then
+        fontString._kmR, fontString._kmG, fontString._kmB, fontString._kmA = r, g, b, a
+        fontString:SetTextColor(r, g, b, a)
+    end
+end
+
+local floodgateCompletedPreview
+local inProgressPreview
+
 local function getFloodgateCompletedPreviewState()
-    return {
-        inChallenge = true,
-        mode = "MYTHIC_PLUS",
-        challengeCompleted = true,
-        completedOnTime = true,
-        completionTimeMs = 1974000,
-        elapsed = 1974,
-        timeLimit = 2040,
-        mapID = nil,
-        mapName = "Operation: Floodgate",
-        level = 10,
-        deathCount = 6,
-        deathPenalty = 30,
-        forcesCurrent = 100,
-        forcesTotal = 100,
-        objectives = {
-            { text = "Douse Security", completed = true, doneAt = 430 },
-            { text = "Disable Aqua Grid", completed = true, doneAt = 1120 },
-            { text = "Defeat Head Engineer", completed = true, doneAt = 1865 },
-        },
-    }
+    if not floodgateCompletedPreview then
+        floodgateCompletedPreview = {
+            inChallenge = true,
+            mode = "MYTHIC_PLUS",
+            challengeCompleted = true,
+            completedOnTime = true,
+            completionTimeMs = 1974000,
+            elapsed = 1974,
+            timeLimit = 2040,
+            mapID = nil,
+            mapName = "Operation: Floodgate",
+            level = 10,
+            deathCount = 6,
+            deathPenalty = 30,
+            forcesCurrent = 100,
+            forcesTotal = 100,
+            forcesCompleted = true,
+            objectives = {
+                { text = "Douse Security", completed = true, doneAt = 430 },
+                { text = "Disable Aqua Grid", completed = true, doneAt = 1120 },
+                { text = "Defeat Head Engineer", completed = true, doneAt = 1865 },
+            },
+        }
+    end
+    return floodgateCompletedPreview
 end
 
 local function getInProgressPreviewState()
-    return {
-        inChallenge = true,
-        mode = "MYTHIC_PLUS",
-        challengeCompleted = false,
-        completedOnTime = nil,
-        completionTimeMs = nil,
-        elapsed = 1286,
-        timeLimit = 2040,
-        mapID = nil,
-        mapName = "Operation: Floodgate",
-        level = 10,
-        deathCount = 4,
-        deathPenalty = 20,
-        forcesCurrent = 78,
-        forcesTotal = 100,
-        objectives = {
-            { text = "Douse Security", completed = true, doneAt = 430 },
-            { text = "Disable Aqua Grid", completed = false, doneAt = nil },
-            { text = "Defeat Head Engineer", completed = false, doneAt = nil },
-        },
-    }
+    if not inProgressPreview then
+        inProgressPreview = {
+            inChallenge = true,
+            mode = "MYTHIC_PLUS",
+            challengeCompleted = false,
+            completedOnTime = nil,
+            completionTimeMs = nil,
+            elapsed = 1286,
+            timeLimit = 2040,
+            mapID = nil,
+            mapName = "Operation: Floodgate",
+            level = 10,
+            deathCount = 4,
+            deathPenalty = 20,
+            forcesCurrent = 78,
+            forcesTotal = 100,
+            objectives = {
+                { text = "Douse Security", completed = true, doneAt = 430 },
+                { text = "Disable Aqua Grid", completed = false, doneAt = nil },
+                { text = "Defeat Head Engineer", completed = false, doneAt = nil },
+            },
+        }
+    end
+    return inProgressPreview
+end
+
+local function resolveRenderState()
+    if ns.ui.previewMode then
+        local previewScenario = ns.db.profile.previewScenario or "LIVE"
+        if previewScenario == "FLOODGATE_COMPLETED" then
+            return getFloodgateCompletedPreviewState(), true
+        elseif previewScenario == "IN_PROGRESS" then
+            return getInProgressPreviewState(), true
+        end
+    end
+    return ns.state, false
 end
 
 local function savePosition()
@@ -143,6 +179,7 @@ function ns:ApplyTheme()
     self.ui.root:SetBackdropColor(backgroundR, backgroundG, backgroundB, backgroundA)
     self.ui.root:SetBackdropBorderColor(borderR, borderG, borderB, borderA)
     self.ui.accent:SetColorTexture(accentR, accentG, accentB, accentA)
+    self.ui.timer._kmR = nil
     self.ui.timer:SetTextColor(timerR, timerG, timerB, timerA)
     self.ui.title:SetTextColor(accentR, accentG, accentB, accentA)
     self.ui.statusText:SetTextColor(textR, textG, textB, textA)
@@ -166,8 +203,8 @@ function ns:ApplyFrameSettings()
     end
 
     local appearance = self.db.profile.appearance or {}
-    local width = tonumber(appearance.frameWidth) or 350
-    local height = tonumber(appearance.frameHeight) or 248
+    local width = tonumber(appearance.frameWidth) or 288
+    local height = tonumber(appearance.frameHeight) or 258
     local scale = tonumber(self.db.profile.scale) or 1
     local fontScale = tonumber(appearance.fontScale) or 1
     local titleFont = FONT_PATHS[appearance.titleFont] or FONT_PATHS.FRIZQT
@@ -217,91 +254,26 @@ function ns:RefreshVisibility()
     self:UpdateObjectiveTrackerVisibility()
 end
 
-function ns:Render()
+function ns:RenderTimer()
     if not self.ui.root then
         return
     end
 
-    local state = self.state
-    if self.ui.previewMode then
-        local previewScenario = self.db.profile.previewScenario or "LIVE"
-        if previewScenario == "FLOODGATE_COMPLETED" then
-            state = getFloodgateCompletedPreviewState()
-        elseif previewScenario == "IN_PROGRESS" then
-            state = getInProgressPreviewState()
-        end
-    end
-
+    local state, isPreview = resolveRenderState()
     local isMythicPlus = state.mode == "MYTHIC_PLUS"
-    local mapText = state.mapName
-    if isMythicPlus and state.level and state.level > 0 then
-        mapText = string.format("%s  +%d", state.mapName, state.level)
-    end
-    self.ui.title:SetText(mapText)
     local elapsed = tonumber(state.elapsed) or 0
     local limit = tonumber(state.timeLimit) or 0
+
+    if not isMythicPlus and not self.db.profile.showUntimedStopwatch then
+        setText(self.ui.timer, "")
+        return
+    end
+
     local timerText = self:FormatTime(elapsed)
     if isMythicPlus and limit > 0 then
         timerText = timerText .. "/" .. self:FormatTime(limit)
     end
-    self.ui.timer:SetText(timerText)
-
-    if isMythicPlus then
-        if self.ui.previewMode and (self.db.profile.previewScenario == "FLOODGATE_COMPLETED" or self.db.profile.previewScenario == "IN_PROGRESS") then
-            self.ui.recordText:SetText("PB 32:54  |  Best Timed +10 32:54")
-        else
-            local recordSummary = self:GetRecordSummary()
-            local comparisonSummary = self:GetBestTimedComparisonSummary()
-            if recordSummary and comparisonSummary then
-                self.ui.recordText:SetText(recordSummary .. "\n" .. comparisonSummary)
-            else
-                self.ui.recordText:SetText(recordSummary or comparisonSummary or "")
-            end
-        end
-    else
-        if state.mode == "HEROIC" then
-            self.ui.recordText:SetText("Heroic Dungeon")
-        elseif state.mode == "MYTHIC_ZERO" then
-            self.ui.recordText:SetText("Mythic 0 Dungeon")
-        elseif state.mode == "FOLLOWER" then
-            self.ui.recordText:SetText("Follower Dungeon")
-        else
-            self.ui.recordText:SetText("Normal Dungeon")
-        end
-    end
-
-    local timerFailed = isMythicPlus and (limit > 0) and (elapsed > limit)
-    if isMythicPlus then
-        if state.challengeCompleted then
-            if state.completedOnTime then
-                self.ui.statusText:SetText("|cff7CFC00COMPLETED (Timed)|r")
-            else
-                self.ui.statusText:SetText("|cffFF2A2EFAILED|r")
-            end
-        elseif self.db.profile.showPaceHints and (tonumber(state.timeLimit) or 0) > 0 then
-            local elapsed = tonumber(state.elapsed) or 0
-            local penalty = tonumber(state.deathPenalty) or 0
-            local limit = tonumber(state.timeLimit) or 0
-            local effective = elapsed + penalty
-            local tl = state.timeLimits
-            local t3 = (tl and tl[3]) or (limit * 0.6)
-            local t2 = (tl and tl[2]) or (limit * 0.8)
-            local t1 = (tl and tl[1]) or limit
-            if effective <= t3 then
-                self.ui.statusText:SetText("|cff7CFC00PACE: +3|r")
-            elseif effective <= t2 then
-                self.ui.statusText:SetText("|cff53B9FFPACE: +2|r")
-            elseif effective <= t1 then
-                self.ui.statusText:SetText("|cffFFD966PACE: +1|r")
-            else
-                self.ui.statusText:SetText("|cffFF6666PACE: Overtime|r")
-            end
-        else
-            self.ui.statusText:SetText("")
-        end
-    else
-        self.ui.statusText:SetText("Bosses")
-    end
+    setText(self.ui.timer, timerText)
 
     local appearance = self.db.profile.appearance or {}
     local useClassColor = appearance.useClassColor and true or false
@@ -311,13 +283,86 @@ function ns:Render()
     else
         accentR, accentG, accentB = self:HexToRGBA(appearance.accentColor, 0.33, 0.73, 1.00, 1)
     end
+
+    local timerFailed = isMythicPlus and (limit > 0) and (elapsed > limit)
     if isMythicPlus and (timerFailed or (state.challengeCompleted and not state.completedOnTime)) then
         local failR, failG, failB, failA = self:HexToRGBA(TIMER_FAILED_COLOR, 1, 0.16, 0.18, 1)
-        self.ui.timer:SetTextColor(failR, failG, failB, failA)
+        setTimerColor(self.ui.timer, failR, failG, failB, failA)
     else
         local timerR, timerG, timerB, timerA = self:HexToRGBA(appearance.timerColor, accentR, accentG, accentB, 1)
-        self.ui.timer:SetTextColor(timerR, timerG, timerB, timerA)
+        setTimerColor(self.ui.timer, timerR, timerG, timerB, timerA)
     end
+
+    if not isMythicPlus then
+        return
+    end
+
+    if limit <= 0 then
+        setText(self.ui.chest3, "+3 --:--")
+        setText(self.ui.chest2, "+2 --:--")
+        setText(self.ui.chest1, "+1 --:--")
+    else
+        local tl = state.timeLimits
+        local t3 = (tl and tl[3]) or (limit * 0.6)
+        local t2 = (tl and tl[2]) or (limit * 0.8)
+        local t1 = (tl and tl[1]) or limit
+        setText(self.ui.chest3, "+3 " .. self:FormatTime(t3 - elapsed))
+        setText(self.ui.chest2, "+2 " .. self:FormatTime(t2 - elapsed))
+        setText(self.ui.chest1, "+1 " .. self:FormatTime(t1 - elapsed))
+    end
+
+    if state.challengeCompleted then
+        if state.completedOnTime then
+            setText(self.ui.statusText, "|cff7CFC00COMPLETED (Timed)|r")
+        else
+            setText(self.ui.statusText, "|cffFF2A2EFAILED|r")
+        end
+    elseif self.db.profile.showPaceHints and limit > 0 then
+        local penalty = tonumber(state.deathPenalty) or 0
+        local effective = elapsed + penalty
+        local tl = state.timeLimits
+        local t3 = (tl and tl[3]) or (limit * 0.6)
+        local t2 = (tl and tl[2]) or (limit * 0.8)
+        local t1 = (tl and tl[1]) or limit
+        if effective <= t3 then
+            setText(self.ui.statusText, "|cff7CFC00PACE: +3|r")
+        elseif effective <= t2 then
+            setText(self.ui.statusText, "|cff53B9FFPACE: +2|r")
+        elseif effective <= t1 then
+            setText(self.ui.statusText, "|cffFFD966PACE: +1|r")
+        else
+            setText(self.ui.statusText, "|cffFF6666PACE: Overtime|r")
+        end
+    else
+        setText(self.ui.statusText, "")
+    end
+
+    if isPreview then
+        setText(self.ui.recordText, "PB 32:54  |  Best Timed +10 32:54")
+    else
+        local recordSummary = self:GetRecordSummary()
+        local comparisonSummary = self:GetBestTimedComparisonSummary()
+        if recordSummary and comparisonSummary then
+            setText(self.ui.recordText, recordSummary .. "\n" .. comparisonSummary)
+        else
+            setText(self.ui.recordText, recordSummary or comparisonSummary or "")
+        end
+    end
+end
+
+function ns:Render()
+    if not self.ui.root then
+        return
+    end
+
+    local state = resolveRenderState()
+    local isMythicPlus = state.mode == "MYTHIC_PLUS"
+
+    local mapText = state.mapName
+    if isMythicPlus and state.level and state.level > 0 then
+        mapText = string.format("%s  +%d", state.mapName, state.level)
+    end
+    setText(self.ui.title, mapText)
 
     if isMythicPlus then
         updateAffixIcons()
@@ -328,44 +373,47 @@ function ns:Render()
         self.ui.forcesText:Show()
         self.ui.deaths:Show()
 
-        if limit <= 0 then
-            self.ui.chest3:SetText("+3 --:--")
-            self.ui.chest2:SetText("+2 --:--")
-            self.ui.chest1:SetText("+1 --:--")
-        else
-            local tl = state.timeLimits
-            local t3 = (tl and tl[3]) or (limit * 0.6)
-            local t2 = (tl and tl[2]) or (limit * 0.8)
-            local t1 = (tl and tl[1]) or limit
-            self.ui.chest3:SetText("+3 " .. self:FormatTime(t3 - state.elapsed))
-            self.ui.chest2:SetText("+2 " .. self:FormatTime(t2 - state.elapsed))
-            self.ui.chest1:SetText("+1 " .. self:FormatTime(t1 - state.elapsed))
-        end
-
         local total = tonumber(state.forcesTotal) or 0
         local current = tonumber(state.forcesCurrent) or 0
         if total > 0 then
             local pct = math.min(1, math.max(0, current / total))
             self.ui.forcesBar:SetValue(pct)
             if state.forcesCompleted or pct >= 1 then
-                self.ui.forcesText:SetText(string.format("|cff7CFC00[Done]|r Forces %d / %d (100.0%%)", total, total))
+                setText(self.ui.forcesText, string.format("|cff7CFC00[Done]|r Forces %d / %d (100.0%%)", total, total))
             else
-                self.ui.forcesText:SetText(string.format("|cffBFBFBF[ ]|r Forces %d / %d (%.1f%%)", current, total, pct * 100))
+                setText(self.ui.forcesText, string.format("|cffBFBFBF[ ]|r Forces %d / %d (%.1f%%)", current, total, pct * 100))
             end
         else
             self.ui.forcesBar:SetValue(0)
-            self.ui.forcesText:SetText("|cffBFBFBF[ ]|r Forces 0 / 0 (0.0%)")
+            setText(self.ui.forcesText, "|cffBFBFBF[ ]|r Forces 0 / 0 (0.0%)")
         end
 
-        self.ui.deaths:SetText(string.format("Deaths %d  |  Penalty %s", state.deathCount, self:FormatTime(state.deathPenalty)))
+        setText(self.ui.deaths, string.format("Deaths %d  |  Penalty %s", state.deathCount, self:FormatTime(state.deathPenalty)))
     else
         self.ui.affixRow:Hide()
         self.ui.chest3:Hide()
         self.ui.chest2:Hide()
         self.ui.chest1:Hide()
-        self.ui.forcesBar:Hide()
-        self.ui.forcesText:Hide()
-        self.ui.deaths:Hide()
+        self.ui.forcesBar:Show()
+        self.ui.forcesText:Show()
+        self.ui.deaths:Show()
+
+        local done = tonumber(state.bossesDone) or 0
+        local total = tonumber(state.bossesTotal) or 0
+        if total > 0 then
+            self.ui.forcesBar:SetValue(math.min(1, done / total))
+        else
+            self.ui.forcesBar:SetValue(0)
+        end
+        setText(self.ui.forcesText, string.format("Bosses %d / %d", done, total))
+        setText(self.ui.deaths, string.format("Deaths %d", state.deathCount or 0))
+
+        setText(self.ui.recordText, self:GetDungeonRecordSummary())
+        if state.challengeCompleted then
+            setText(self.ui.statusText, string.format("|cff7CFC00COMPLETE  %s|r", self:FormatTime(state.elapsed)))
+        else
+            setText(self.ui.statusText, string.format("Bosses %d / %d", done, total))
+        end
     end
 
     for i = 1, #self.ui.objectiveRows do
@@ -374,23 +422,34 @@ function ns:Render()
         if objective then
             row:Show()
             if objective.completed then
-                if isMythicPlus then
-                    row:SetText(string.format("|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r", objective.text, self:FormatTime(objective.doneAt or state.elapsed)))
-                else
-                    row:SetText(string.format("|cff7CFC00[Done]|r %s", objective.text))
+                local deltaText = ""
+                local delta = self:GetSplitDelta(objective, i)
+                if delta then
+                    local color = delta > 0 and "ffFF6666" or "ff7CFC00"
+                    deltaText = string.format("  |c%s(%s)|r", color, self:FormatDelta(delta))
                 end
+                setText(row, string.format(
+                    "|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r%s",
+                    objective.text,
+                    self:FormatTime(objective.doneAt or state.elapsed),
+                    deltaText
+                ))
+            elseif objective.engaged then
+                setText(row, string.format("|cffFFD100[Engaged]|r %s", objective.text))
             else
-                row:SetText(string.format("|cffBFBFBF[ ]|r %s", objective.text))
+                setText(row, string.format("|cffBFBFBF[ ]|r %s", objective.text))
             end
         else
             row:Hide()
         end
     end
+
+    self:RenderTimer()
 end
 
 function ns:BuildUI()
     local root = CreateFrame("Frame", "KeystoneMonitorFrame", UIParent, "BackdropTemplate")
-    root:SetSize(350, 248)
+    root:SetSize(288, 258)
     root:SetFrameStrata("HIGH")
     root:SetClampedToScreen(true)
     root:EnableMouse(true)
@@ -506,6 +565,45 @@ function ns:BuildUI()
     deaths:SetPoint("TOPRIGHT", root, "TOPRIGHT", -10, -92)
     deaths:SetJustifyH("LEFT")
 
+    local deathsButton = CreateFrame("Button", nil, root)
+    deathsButton:SetAllPoints(deaths)
+    deathsButton:RegisterForDrag("LeftButton")
+    deathsButton:SetScript("OnDragStart", function()
+        if ns.ui.previewMode or (not ns.db.profile.locked) then
+            root:StartMoving()
+        end
+    end)
+    deathsButton:SetScript("OnDragStop", function()
+        root:StopMovingOrSizing()
+        savePosition()
+    end)
+    deathsButton:SetScript("OnEnter", function(selfButton)
+        local log = ns.state.deathLog
+        if not log or #log == 0 then
+            return
+        end
+        GameTooltip:SetOwner(selfButton, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Death Log", 1, 1, 1)
+        local first = math.max(1, #log - 14)
+        if first > 1 then
+            GameTooltip:AddLine(string.format("(%d earlier deaths hidden)", first - 1), 0.6, 0.6, 0.6)
+        end
+        for i = first, #log do
+            local entry = log[i]
+            local color = entry.class and RAID_CLASS_COLORS[entry.class]
+            GameTooltip:AddDoubleLine(
+                entry.name or "?",
+                ns:FormatTime(entry.t or 0),
+                color and color.r or 0.9, color and color.g or 0.9, color and color.b or 0.9,
+                0.7, 0.7, 0.7
+            )
+        end
+        GameTooltip:Show()
+    end)
+    deathsButton:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+
     local statusText = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     statusText:SetPoint("TOPLEFT", deaths, "BOTTOMLEFT", 0, -4)
     statusText:SetPoint("TOPRIGHT", deaths, "BOTTOMRIGHT", 0, -4)
@@ -541,6 +639,7 @@ function ns:BuildUI()
     self.ui.forcesText = forcesText
     self.ui.forcesBG = forcesBG
     self.ui.deaths = deaths
+    self.ui.deathsButton = deathsButton
     self.ui.objectiveRows = objectiveRows
 
     self:RestorePosition()

@@ -78,6 +78,7 @@ function ns:SyncChallengeState(forceFull)
     else
         wipe(self.state.weeklyAffixIDs)
         wipe(self.state.weeklyAffixes)
+        self._affixCacheDirty = true
     end
 
     if not nowInChallenge and self.state.challengeCompleted and activeMode == "MYTHIC_PLUS" and self:IsInMythicPlusInstance() then
@@ -91,6 +92,8 @@ function ns:SyncChallengeState(forceFull)
     if not nowInChallenge and (wasInChallenge or forceFull) then
         self:StopTicker()
         self:ResetRuntimeState()
+        self._bossListKey = nil
+        self:UpdateDeathWatcher()
         self:RefreshWeeklyAffixes()
         self:RefreshVisibility()
         self:UpdateObjectiveTrackerVisibility()
@@ -101,12 +104,10 @@ function ns:SyncChallengeState(forceFull)
     if nowInChallenge and (not wasInChallenge or forceFull) then
         self.state.inChallenge = true
         if activeMode ~= "MYTHIC_PLUS" then
-            self.state.challengeCompleted = false
-            self.state.completedOnTime = nil
-            self.state.completionTimeMs = nil
-            self.state.runStartTime = GetTime()
+            self:BeginDungeonRun()
         end
         self:RefreshChallengeData()
+        self:UpdateDeathWatcher()
         self:RefreshVisibility()
         self:UpdateObjectiveTrackerVisibility()
         self:Render()

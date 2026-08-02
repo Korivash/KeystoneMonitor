@@ -32,6 +32,7 @@ local DUNGEON_MODE_OPTIONS = {
     { key = "FOLLOWER", name = "Follower" },
     { key = "NORMAL", name = "Normal" },
     { key = "HEROIC", name = "Heroic" },
+    { key = "TIMEWALKING", name = "Timewalking" },
     { key = "MYTHIC_ZERO", name = "Mythic 0" },
     { key = "MYTHIC_PLUS", name = "Mythic+" },
 }
@@ -40,21 +41,21 @@ local PRESET_OPTIONS = {
     {
         key = "KEYSTONE",
         name = "Keystone Monitor Default",
-        scale = 1.0,
-        alpha = 1.0,
+        scale = 0.99,
+        alpha = 0.00,
         appearance = {
-            useClassColor = true,
-            frameWidth = 350,
-            frameHeight = 248,
-            fontScale = 1.0,
+            useClassColor = false,
+            frameWidth = 288,
+            frameHeight = 258,
+            fontScale = 1.16,
             titleFont = "FRIZQT",
             timerFont = "ARIALN",
             bodyFont = "FRIZQT",
             accentColor = "53B9FFFF",
             backgroundColor = "0D0D0DC7",
             borderColor = "333333F2",
-            textColor = "F2F2F2FF",
-            timerColor = "FFFFFFFF",
+            textColor = "53B9FFFF",
+            timerColor = "53B9FFFF",
             forcesBarColor = "53B9FFFF",
             forcesBarBGColor = "212121E6",
         },
@@ -132,6 +133,8 @@ local EXPORT_FIELDS = {
     "showWhenUnlocked",
     "showBestTimedComparison",
     "showPaceHints",
+    "autoSlotKeystone",
+    "showUntimedStopwatch",
     "dungeonMode",
     "previewScenario",
     "useFloodgateCompletedPreview",
@@ -413,6 +416,8 @@ local function buildExportString()
         showWhenUnlocked = profile.showWhenUnlocked and "1" or "0",
         showBestTimedComparison = profile.showBestTimedComparison and "1" or "0",
         showPaceHints = profile.showPaceHints and "1" or "0",
+        autoSlotKeystone = profile.autoSlotKeystone and "1" or "0",
+        showUntimedStopwatch = profile.showUntimedStopwatch and "1" or "0",
         dungeonMode = tostring(profile.dungeonMode or "AUTO"),
         previewScenario = tostring(profile.previewScenario or "LIVE"),
         useFloodgateCompletedPreview = ((profile.previewScenario or "LIVE") == "FLOODGATE_COMPLETED") and "1" or "0",
@@ -484,11 +489,18 @@ local function applyImportString(serialized)
     if map.showPaceHints then
         profile.showPaceHints = map.showPaceHints ~= "0"
     end
+    if map.autoSlotKeystone then
+        profile.autoSlotKeystone = map.autoSlotKeystone ~= "0"
+    end
+    if map.showUntimedStopwatch then
+        profile.showUntimedStopwatch = map.showUntimedStopwatch == "1"
+    end
     if map.dungeonMode then
         if map.dungeonMode == "AUTO"
             or map.dungeonMode == "FOLLOWER"
             or map.dungeonMode == "NORMAL"
             or map.dungeonMode == "HEROIC"
+            or map.dungeonMode == "TIMEWALKING"
             or map.dungeonMode == "MYTHIC_ZERO"
             or map.dungeonMode == "MYTHIC_PLUS" then
             profile.dungeonMode = map.dungeonMode
@@ -948,6 +960,8 @@ function ns:RefreshOptionsUI()
     frame.showUnlockedToggle:SetChecked(profile.showWhenUnlocked and true or false)
     frame.showBestTimedComparisonToggle:SetChecked(profile.showBestTimedComparison and true or false)
     frame.showPaceHintsToggle:SetChecked(profile.showPaceHints and true or false)
+    frame.autoSlotKeystoneToggle:SetChecked(profile.autoSlotKeystone and true or false)
+    frame.untimedStopwatchToggle:SetChecked(profile.showUntimedStopwatch and true or false)
     frame.useClassColorToggle:SetChecked(appearance.useClassColor and true or false)
     dropdownSetValue(frame.dungeonModeDrop.dropdown, DUNGEON_MODE_OPTIONS, profile.dungeonMode or "AUTO")
     dropdownSetValue(frame.previewScenarioDrop.dropdown, PREVIEW_SCENARIO_OPTIONS, profile.previewScenario or "LIVE")
@@ -1192,6 +1206,13 @@ function ns:BuildOptionsUI()
     end)
     local showPaceHintsToggle = createToggleRow(generalCore, "Show pace hints", "TOPLEFT", showBestTimedComparisonToggle, "BOTTOMLEFT", 0, -10, function(value)
         ns.db.profile.showPaceHints = value and true or false
+        ns:Render()
+    end)
+    local autoSlotKeystoneToggle = createToggleRow(generalCore, "Auto-insert keystone at the font", "TOPLEFT", showPaceHintsToggle, "BOTTOMLEFT", 0, -10, function(value)
+        ns.db.profile.autoSlotKeystone = value and true or false
+    end)
+    local untimedStopwatchToggle = createToggleRow(generalCore, "Show stopwatch in untimed dungeons", "TOPLEFT", autoSlotKeystoneToggle, "BOTTOMLEFT", 0, -10, function(value)
+        ns.db.profile.showUntimedStopwatch = value and true or false
         ns:Render()
     end)
 
@@ -1446,6 +1467,8 @@ function ns:BuildOptionsUI()
     frame.showUnlockedToggle = showUnlockedToggle
     frame.showBestTimedComparisonToggle = showBestTimedComparisonToggle
     frame.showPaceHintsToggle = showPaceHintsToggle
+    frame.autoSlotKeystoneToggle = autoSlotKeystoneToggle
+    frame.untimedStopwatchToggle = untimedStopwatchToggle
     frame.useClassColorToggle = useClassColorToggle
     frame.dungeonModeDrop = dungeonModeDrop
     frame.previewScenarioDrop = previewScenarioDrop
