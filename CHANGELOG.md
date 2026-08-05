@@ -6,6 +6,29 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-05
+
+### Added
+
+- Run History tab in the `/km` window — the run log now lives inside the main options window instead of chat. It shows summary stats (total runs, timed rate, best timed key, average deaths), All / Mythic+ / Dungeons filters, key levels colored by tier, Timed/Depleted/Cleared results, and full per-run tooltips. `/km history` jumps straight to the tab.
+- Watch button on the tracker frame (top-right, shown faintly) that opens the Run History tab.
+- Run history now stores the last 100 runs (up from 30).
+
+### Changed
+
+- The `/km` window has been redesigned to match the new visual language: near-black neutral surfaces, an accent gradient strip with a soft glow across the top, accent-colored section titles with gradient rules, sidebar tabs with an accent selection bar, and toggles/sliders tinted by your accent or class color instead of the old fixed blue. Changing the accent color (or toggling class color) re-themes the window instantly along with the tracker.
+- Tracker visual refresh: gradient accent bar with a soft glow, subtle header sheen tinted by your accent color, smoothly animated progress bar with a spark at the fill edge, and icon-based objective states (green check for done, hourglass for engaged, dim indicator for pending) replacing the `[Done]` / `[Engaged]` / `[ ]` text markers.
+- Deaths are highlighted in red on the tracker once the counter is above zero.
+
+### Removed
+
+- The standalone `/km history` window and `/km history chat` chat printout. History is part of the `/km` window now.
+- The ko-fi support link. The Help & Feedback section in General now links to the Discord for issues and questions instead.
+
+### Performance
+
+- Progress bar animation runs its OnUpdate handler only while the bar is actually moving; the history panel reuses row frames and only refreshes while visible.
+
 ## [0.8.0] - 2026-08-02
 
 ### Added

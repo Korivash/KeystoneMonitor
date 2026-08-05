@@ -1,7 +1,7 @@
 local _, ns = ...
 
 local RUN_RESUME_MAX_AGE = 4 * 3600
-local MAX_HISTORY_ENTRIES = 30
+local MAX_HISTORY_ENTRIES = 100
 
 local MODE_LABELS = {
     FOLLOWER = "Follower Dungeon",
@@ -285,6 +285,7 @@ function ns:AddHistoryEntry(entry)
     for i = #self.db.history, MAX_HISTORY_ENTRIES + 1, -1 do
         table.remove(self.db.history, i)
     end
+    self:NotifyHistoryChanged()
 end
 
 function ns:GetSplitDelta(row, index)

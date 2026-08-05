@@ -1,8 +1,8 @@
 ## Interface: 120007
-## Title: Dungeon Progress & Boss Tracker - Keystone Monitor
-## Notes: Compact class-colored dungeon tracker for Follower, Normal, Heroic, Timewalking, Mythic 0, and Mythic+.
+## Title: Keystone Monitor - Mythic+ Timer, Splits & Run History
+## Notes: Mythic+ timer with splits vs your best, pace hints, death log, and a full run history. Tracks every 5-player dungeon mode.
 ## Author: Korivash
-## Version: 0.8.0
+## Version: 0.9.0
 ## IconTexture: Interface\AddOns\KeystoneMonitor\keystone.png
 ## SavedVariables: KeystoneMonitorDB
 ## Category-enUS: Mythic+ Dungeons
@@ -14,6 +14,7 @@ src/Runtime/State.lua
 src/Runtime/Bosses.lua
 src/Runtime/Splits.lua
 src/UI/Render.lua
+src/UI/History.lua
 src/UI/Options.lua
 src/Runtime/Timer.lua
 src/Runtime/Events.lua

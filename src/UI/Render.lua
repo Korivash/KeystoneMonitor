@@ -9,6 +9,58 @@ local FONT_PATHS = {
 
 local TIMER_FAILED_COLOR = "FFFF2A2E"
 
+local WHITE8X8 = "Interface\\Buttons\\WHITE8X8"
+local ICON_DONE = "|TInterface\\RaidFrame\\ReadyCheck-Ready:12:12:0:-1|t"
+local ICON_ENGAGED = "|TInterface\\RaidFrame\\ReadyCheck-Waiting:12:12:0:-1|t"
+local ICON_PENDING = "|TInterface\\COMMON\\Indicator-Gray:10:10:0:-1|t"
+
+local BAR_EPSILON = 0.002
+
+local function updateBarSpark(bar)
+    local spark = bar._kmSpark
+    if not spark then
+        return
+    end
+    local value = bar._kmDisplay or bar:GetValue() or 0
+    if value <= 0.001 or value >= 0.999 then
+        spark:Hide()
+        return
+    end
+    spark:ClearAllPoints()
+    spark:SetPoint("CENTER", bar, "LEFT", bar:GetWidth() * value, 0)
+    spark:Show()
+end
+
+local function barOnUpdate(bar, elapsed)
+    local current = bar._kmDisplay or 0
+    local target = bar._kmTarget or 0
+    if math.abs(target - current) <= BAR_EPSILON then
+        bar._kmDisplay = target
+        bar:SetValue(target)
+        bar:SetScript("OnUpdate", nil)
+    else
+        bar._kmDisplay = current + (target - current) * math.min(elapsed * 9, 1)
+        bar:SetValue(bar._kmDisplay)
+    end
+    updateBarSpark(bar)
+end
+
+local function setBarValue(bar, target)
+    target = math.min(1, math.max(0, target or 0))
+    if bar._kmTarget == target then
+        return
+    end
+    bar._kmTarget = target
+    if not bar:IsVisible() then
+        bar._kmDisplay = target
+        bar:SetValue(target)
+        bar:SetScript("OnUpdate", nil)
+        updateBarSpark(bar)
+        return
+    end
+    bar:SetScript("OnUpdate", barOnUpdate)
+end
+
 local function setText(fontString, text)
     if fontString._kmText ~= text then
         fontString._kmText = text
@@ -178,7 +230,9 @@ function ns:ApplyTheme()
 
     self.ui.root:SetBackdropColor(backgroundR, backgroundG, backgroundB, backgroundA)
     self.ui.root:SetBackdropBorderColor(borderR, borderG, borderB, borderA)
-    self.ui.accent:SetColorTexture(accentR, accentG, accentB, accentA)
+    self.ui.accent:SetGradient("HORIZONTAL", CreateColor(accentR, accentG, accentB, accentA), CreateColor(accentR, accentG, accentB, 0.05))
+    self.ui.accentGlow:SetGradient("VERTICAL", CreateColor(accentR, accentG, accentB, 0), CreateColor(accentR, accentG, accentB, 0.12))
+    self.ui.sheen:SetGradient("VERTICAL", CreateColor(accentR, accentG, accentB, 0), CreateColor(accentR, accentG, accentB, 0.07 * panelAlpha))
     self.ui.timer._kmR = nil
     self.ui.timer:SetTextColor(timerR, timerG, timerB, timerA)
     self.ui.title:SetTextColor(accentR, accentG, accentB, accentA)
@@ -189,11 +243,21 @@ function ns:ApplyTheme()
     self.ui.chest1:SetTextColor(textR, textG, textB, textA)
     self.ui.deaths:SetTextColor(textR, textG, textB, textA)
     self.ui.forcesText:SetTextColor(textR, textG, textB, textA)
-    self.ui.forcesBar:SetStatusBarColor(barR, barG, barB, barA)
+    local barFill = self.ui.forcesBar:GetStatusBarTexture()
+    if barFill then
+        barFill:SetGradient("VERTICAL", CreateColor(barR * 0.65, barG * 0.65, barB * 0.65, barA), CreateColor(barR, barG, barB, barA))
+    end
     self.ui.forcesBG:SetColorTexture(barBGR, barBGG, barBGB, barBGA)
 
     for i = 1, #self.ui.objectiveRows do
         self.ui.objectiveRows[i]:SetTextColor(textR, textG, textB, textA)
+    end
+
+    if self.ApplyHistoryTheme then
+        self:ApplyHistoryTheme()
+    end
+    if self.ApplyOptionsTheme then
+        self:ApplyOptionsTheme()
     end
 end
 
@@ -213,6 +277,7 @@ function ns:ApplyFrameSettings()
 
     self.ui.root:SetSize(width, height)
     self.ui.root:SetScale(scale)
+    updateBarSpark(self.ui.forcesBar)
 
     local function setFontScale(fontString, baseSize, fontPath)
         local currentFont, _, flags = fontString:GetFont()
@@ -377,18 +442,20 @@ function ns:Render()
         local current = tonumber(state.forcesCurrent) or 0
         if total > 0 then
             local pct = math.min(1, math.max(0, current / total))
-            self.ui.forcesBar:SetValue(pct)
+            setBarValue(self.ui.forcesBar, pct)
             if state.forcesCompleted or pct >= 1 then
-                setText(self.ui.forcesText, string.format("|cff7CFC00[Done]|r Forces %d / %d (100.0%%)", total, total))
+                setText(self.ui.forcesText, string.format(ICON_DONE .. " Forces %d / %d", total, total))
             else
-                setText(self.ui.forcesText, string.format("|cffBFBFBF[ ]|r Forces %d / %d (%.1f%%)", current, total, pct * 100))
+                setText(self.ui.forcesText, string.format("Forces %d / %d  ·  %.1f%%", current, total, pct * 100))
             end
         else
-            self.ui.forcesBar:SetValue(0)
-            setText(self.ui.forcesText, "|cffBFBFBF[ ]|r Forces 0 / 0 (0.0%)")
+            setBarValue(self.ui.forcesBar, 0)
+            setText(self.ui.forcesText, "Forces 0 / 0  ·  0.0%")
         end
 
-        setText(self.ui.deaths, string.format("Deaths %d  |  Penalty %s", state.deathCount, self:FormatTime(state.deathPenalty)))
+        local deathCount = tonumber(state.deathCount) or 0
+        local deathText = deathCount > 0 and string.format("|cffFF5C5C%d|r", deathCount) or "0"
+        setText(self.ui.deaths, string.format("Deaths %s  ·  Penalty %s", deathText, self:FormatTime(state.deathPenalty)))
     else
         self.ui.affixRow:Hide()
         self.ui.chest3:Hide()
@@ -401,12 +468,14 @@ function ns:Render()
         local done = tonumber(state.bossesDone) or 0
         local total = tonumber(state.bossesTotal) or 0
         if total > 0 then
-            self.ui.forcesBar:SetValue(math.min(1, done / total))
+            setBarValue(self.ui.forcesBar, done / total)
         else
-            self.ui.forcesBar:SetValue(0)
+            setBarValue(self.ui.forcesBar, 0)
         end
         setText(self.ui.forcesText, string.format("Bosses %d / %d", done, total))
-        setText(self.ui.deaths, string.format("Deaths %d", state.deathCount or 0))
+        local deathCount = tonumber(state.deathCount) or 0
+        local deathText = deathCount > 0 and string.format("|cffFF5C5C%d|r", deathCount) or "0"
+        setText(self.ui.deaths, string.format("Deaths %s", deathText))
 
         setText(self.ui.recordText, self:GetDungeonRecordSummary())
         if state.challengeCompleted then
@@ -429,15 +498,15 @@ function ns:Render()
                     deltaText = string.format("  |c%s(%s)|r", color, self:FormatDelta(delta))
                 end
                 setText(row, string.format(
-                    "|cff7CFC00[Done]|r %s  |cffAFAFAF%s|r%s",
+                    ICON_DONE .. " %s  |cffAFAFAF%s|r%s",
                     objective.text,
                     self:FormatTime(objective.doneAt or state.elapsed),
                     deltaText
                 ))
             elseif objective.engaged then
-                setText(row, string.format("|cffFFD100[Engaged]|r %s", objective.text))
+                setText(row, string.format(ICON_ENGAGED .. " |cffFFD100%s|r", objective.text))
             else
-                setText(row, string.format("|cffBFBFBF[ ]|r %s", objective.text))
+                setText(row, string.format(ICON_PENDING .. " |cff9D9DA3%s|r", objective.text))
             end
         else
             row:Hide()
@@ -476,11 +545,48 @@ function ns:BuildUI()
     accent:SetPoint("TOPLEFT", root, "TOPLEFT", 0, 0)
     accent:SetPoint("TOPRIGHT", root, "TOPRIGHT", 0, 0)
     accent:SetHeight(3)
+    accent:SetTexture(WHITE8X8)
+
+    local accentGlow = root:CreateTexture(nil, "BORDER")
+    accentGlow:SetPoint("TOPLEFT", accent, "BOTTOMLEFT", 0, 0)
+    accentGlow:SetPoint("TOPRIGHT", accent, "BOTTOMRIGHT", 0, 0)
+    accentGlow:SetHeight(14)
+    accentGlow:SetTexture(WHITE8X8)
+
+    local sheen = root:CreateTexture(nil, "BACKGROUND", nil, 1)
+    sheen:SetPoint("TOPLEFT", root, "TOPLEFT", 1, -1)
+    sheen:SetPoint("BOTTOMRIGHT", root, "TOPRIGHT", -1, -90)
+    sheen:SetTexture(WHITE8X8)
 
     local title = root:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
     title:SetPoint("TOPLEFT", root, "TOPLEFT", 10, -10)
-    title:SetPoint("TOPRIGHT", root, "TOPRIGHT", -10, -10)
+    title:SetPoint("TOPRIGHT", root, "TOPRIGHT", -30, -10)
     title:SetJustifyH("LEFT")
+    title:SetWordWrap(false)
+
+    local historyButton = CreateFrame("Button", nil, root)
+    historyButton:SetSize(16, 16)
+    historyButton:SetPoint("TOPRIGHT", root, "TOPRIGHT", -8, -8)
+    historyButton:SetAlpha(0.35)
+    local historyIcon = historyButton:CreateTexture(nil, "ARTWORK")
+    historyIcon:SetAllPoints()
+    historyIcon:SetTexture("Interface\\Icons\\INV_Misc_PocketWatch_01")
+    historyIcon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    historyIcon:SetDesaturated(true)
+    historyButton:SetScript("OnEnter", function(selfButton)
+        selfButton:SetAlpha(1)
+        GameTooltip:SetOwner(selfButton, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Run History", 1, 1, 1)
+        GameTooltip:AddLine("Opens the Keystone Monitor window", 0.7, 0.7, 0.7)
+        GameTooltip:Show()
+    end)
+    historyButton:SetScript("OnLeave", function(selfButton)
+        selfButton:SetAlpha(0.35)
+        GameTooltip:Hide()
+    end)
+    historyButton:SetScript("OnClick", function()
+        ns:ShowHistoryTab()
+    end)
 
     local timer = root:CreateFontString(nil, "OVERLAY", "NumberFontNormalHuge")
     timer:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -4)
@@ -549,9 +655,16 @@ function ns:BuildUI()
     forcesBar:SetPoint("TOPLEFT", affixRow, "BOTTOMLEFT", 0, -8)
     forcesBar:SetPoint("TOPRIGHT", root, "TOPRIGHT", -10, -64)
     forcesBar:SetHeight(15)
-    forcesBar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    forcesBar:SetStatusBarTexture(WHITE8X8)
     forcesBar:SetMinMaxValues(0, 1)
     forcesBar:SetValue(0)
+
+    local forcesSpark = forcesBar:CreateTexture(nil, "OVERLAY")
+    forcesSpark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
+    forcesSpark:SetBlendMode("ADD")
+    forcesSpark:SetSize(14, 34)
+    forcesSpark:Hide()
+    forcesBar._kmSpark = forcesSpark
 
     local forcesBG = forcesBar:CreateTexture(nil, "BACKGROUND")
     forcesBG:SetAllPoints()
@@ -626,6 +739,9 @@ function ns:BuildUI()
 
     self.ui.root = root
     self.ui.accent = accent
+    self.ui.accentGlow = accentGlow
+    self.ui.sheen = sheen
+    self.ui.historyButton = historyButton
     self.ui.title = title
     self.ui.timer = timer
     self.ui.chest3 = chest3

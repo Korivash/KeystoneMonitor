@@ -30,7 +30,7 @@ Keystone Monitor replaces the default objective tracker during dungeon runs with
 
 ### Everywhere
 - **Death log tooltip** — hover the Deaths line to see exactly who died and when, class-colored.
-- **Run history** — the last 30 runs (any mode) with times, deaths, and Timed/Depleted results for keys. View with `/km history`.
+- **Run History tab** — the last 100 runs (any mode) built into the `/km` window, with summary stats (timed rate, best timed key, average deaths), All / Mythic+ / Dungeons filters, and per-run tooltips. Open with `/km` or the watch button on the tracker.
 - **Crash-proof runs** — an in-progress dungeon run survives `/reload`, disconnects, and briefly stepping out of the instance. Timer, boss kills, and deaths all restore automatically.
 - **Objective tracker replacement** — Blizzard's quest tracker is hidden while a run is active and restored afterward.
 
@@ -64,7 +64,6 @@ World of Warcraft\_retail_\Interface\AddOns\KeystoneMonitor\KeystoneMonitor.toc
 | `/km show` | Show the tracker while unlocked |
 | `/km hide` | Hide the tracker outside active runs |
 | `/km reset` | Reset the tracker position |
-| `/km history` | Print your recent runs |
 | `/km resetrun` | Discard the saved snapshot for the current run and start tracking fresh |
 | `/km debug` | Toggle mode-detection debug logging |
 | `/km debug now` | Print a one-off mode-detection report |
@@ -74,6 +73,7 @@ World of Warcraft\_retail_\Interface\AddOns\KeystoneMonitor\KeystoneMonitor.toc
 The options window (`/km`) is organized into tabs:
 
 - **General** — lock/unlock, visibility, best-timed comparison, pace hints, auto keystone insertion, the untimed-dungeon stopwatch, tracked dungeon mode (Auto or force a specific mode), and preview scenarios for styling the tracker without being in a dungeon.
+- **Run History** — your last 100 runs with summary stats, filters, and per-run tooltips.
 - **Layout** — frame width/height, scale, and opacity.
 - **Visual** — class-color accent or fully custom hex colors for every element (accent, background, border, text, timer, forces bar), with color pickers.
 - **Fonts** — separate font choices for title, timer, and body text, plus a global font scale.
@@ -85,7 +85,7 @@ All settings and records live in `KeystoneMonitorDB` (account-wide SavedVariable
 
 - `profile` — appearance and behavior settings.
 - `records` — best clear times and per-boss splits, keyed by dungeon and difficulty.
-- `history` — your last 30 runs.
+- `history` — your last 100 runs.
 - `runtime` — the snapshot of an in-progress run (cleared automatically).
 
 ## Requirements
@@ -107,13 +107,14 @@ src/Runtime/Splits.lua       Mythic+ run history and best-time comparisons
 src/Runtime/Timer.lua        Update ticker
 src/Runtime/Events.lua       Event registration and dispatch
 src/UI/Render.lua            Tracker frame and rendering
+src/UI/History.lua           Run History tab content
 src/UI/Options.lua           Options window
 src/UI/Commands.lua          Slash commands
 ```
 
-## Support
+## Issues & Questions
 
-If you enjoy the addon, you can support development at [ko-fi.com/korivash](https://ko-fi.com/korivash).
+Found a bug or have a question? Join the [Discord](https://discord.gg/VhAj8K4C6F).
 
 ## Author
 
