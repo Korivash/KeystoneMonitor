@@ -30,9 +30,11 @@ Keystone Monitor replaces the default objective tracker during dungeon runs with
 
 ### Everywhere
 - **Death log tooltip** — hover the Deaths line to see exactly who died and when, class-colored.
-- **Run History tab** — the last 100 runs (any mode) built into the `/km` window, with summary stats (timed rate, best timed key, average deaths), All / Mythic+ / Dungeons filters, and per-run tooltips. Open with `/km` or the watch button on the tracker.
+- **Run History tab** — three views built into the `/km` window: **Runs** (last 100 runs of any mode, with summary stats, All / Mythic+ / Dungeons filters, and per-run tooltips), **Best Timed** (highest keystone level timed per dungeon, with your best time at that level), and **Highest Key** (highest keystone level completed per dungeon, timed or not). The Best Timed and Highest Key views are drawn from your full Mythic+ run history for the season, covering every dungeon in the current pool even if you haven't logged a run for it yet. Open with `/km` or the watch button on the tracker.
 - **Crash-proof runs** — an in-progress dungeon run survives `/reload`, disconnects, and briefly stepping out of the instance. Timer, boss kills, and deaths all restore automatically.
 - **Objective tracker replacement** — Blizzard's quest tracker is hidden while a run is active and restored afterward.
+- **Group Finder fill announcement** (optional, on by default) — if you're leading a group posted in Premade Groups and it fills to 5, Keystone Monitor prints a local chat line naming the keystone you're queued for (`Group Filled For +15 Operation: Mechagon`). An "Also broadcast to party chat" sub-option (off by default) sends the same message to party/raid chat so the whole group sees it.
+- **Dungeon completion announcement** (optional, off by default) — when any tracked dungeon run finishes, posts a party/raid chat line with the clear time and death count: `Dungeon Timed in 24:15 - 2 deaths` (or `Dungeon Not Timed in ...` if the key wasn't timed) for Mythic+, `Dungeon Completed in ...` for every other mode.
 
 ## Performance
 
@@ -72,8 +74,8 @@ World of Warcraft\_retail_\Interface\AddOns\KeystoneMonitor\KeystoneMonitor.toc
 
 The options window (`/km`) is organized into tabs:
 
-- **General** — lock/unlock, visibility, best-timed comparison, pace hints, auto keystone insertion, the untimed-dungeon stopwatch, tracked dungeon mode (Auto or force a specific mode), and preview scenarios for styling the tracker without being in a dungeon.
-- **Run History** — your last 100 runs with summary stats, filters, and per-run tooltips.
+- **General** — lock/unlock, visibility, best-timed comparison, pace hints, auto keystone insertion, the untimed-dungeon stopwatch, the Group Finder fill announcement, the dungeon completion announcement, tracked dungeon mode (Auto or force a specific mode), and preview scenarios for styling the tracker without being in a dungeon.
+- **Run History** — Runs (your last 100 runs with summary stats, filters, and per-run tooltips), Best Timed (highest level timed per dungeon), and Highest Key (highest level completed per dungeon, timed or not).
 - **Layout** — frame width/height, scale, and opacity.
 - **Visual** — class-color accent or fully custom hex colors for every element (accent, background, border, text, timer, forces bar), with color pickers.
 - **Fonts** — separate font choices for title, timer, and body text, plus a global font scale.

@@ -19,6 +19,12 @@ local FILTERS = {
     { key = "DUNGEON", label = "Dungeons" },
 }
 
+local VIEWS = {
+    { key = "RUNS", label = "Runs" },
+    { key = "BEST_TIMED", label = "Best Timed" },
+    { key = "HIGHEST_KEY", label = "Highest Key" },
+}
+
 local function keyLevelColor(level)
     if level >= 12 then
         return 1.00, 0.50, 0.00
@@ -126,11 +132,32 @@ local function acquireRow(index)
         local r, g, b = accentColor()
         selfRow.highlight:SetGradient("HORIZONTAL", CreateColor(r, g, b, 0.10), CreateColor(r, g, b, 0.02))
         selfRow.highlight:Show()
+
         local run = selfRow.run
-        if not run then
+        local board = selfRow.board
+        if not run and not board then
             return
         end
+
         GameTooltip:SetOwner(selfRow, "ANCHOR_RIGHT")
+
+        if board then
+            GameTooltip:AddLine(board.name or "?", 1, 1, 1)
+            if board.level and board.level > 0 then
+                GameTooltip:AddDoubleLine("Keystone", string.format("+%d", board.level), 0.7, 0.7, 0.7, 0.9, 0.9, 0.9)
+                GameTooltip:AddDoubleLine("Time", ns:FormatTime((board.ms or 0) / 1000), 0.7, 0.7, 0.7, 0.9, 0.9, 0.9)
+                if board.timed then
+                    GameTooltip:AddLine("Timed", 0.49, 0.99, 0)
+                else
+                    GameTooltip:AddLine("Completed over time", 1, 0.65, 0.20)
+                end
+            else
+                GameTooltip:AddLine("No completed runs yet", 0.7, 0.7, 0.7)
+            end
+            GameTooltip:Show()
+            return
+        end
+
         GameTooltip:AddLine(run.name or "?", 1, 1, 1)
         GameTooltip:AddDoubleLine("Completed", date("%b %d, %Y  %H:%M", run.at or 0), 0.7, 0.7, 0.7, 0.9, 0.9, 0.9)
         if run.mode == "MYTHIC_PLUS" then
@@ -154,6 +181,11 @@ local function acquireRow(index)
 
     ui.rows[index] = row
     return row
+end
+
+local function centeredRowStartX(count, buttonWidth, gap)
+    local totalWidth = count * buttonWidth + (count - 1) * gap
+    return -(totalWidth / 2) + (buttonWidth / 2)
 end
 
 local function updateScrollBounds()
@@ -181,12 +213,87 @@ local function updateScrollBounds()
     ui.scrollThumb:Show()
 end
 
+local function buildLeaderboard(view)
+    local pool = ns:GetDungeonPool()
+    local items = {}
+
+    for i = 1, #pool do
+        local dungeon = pool[i]
+        local record = ns:GetDungeonMapRecord(dungeon.mapID)
+        local level, ms, timed
+
+        if view == "BEST_TIMED" then
+            level = record and record.highestTimedLevel
+            ms = record and record.bestOnTimeAtHighestLevelMs
+            timed = level ~= nil
+        else
+            level = record and record.highestLevel
+            ms = record and record.bestDurationAtHighestLevelMs
+            timed = level ~= nil and record.highestTimedLevel ~= nil and record.highestTimedLevel >= level
+        end
+
+        items[#items + 1] = {
+            mapID = dungeon.mapID,
+            name = dungeon.name,
+            level = level,
+            ms = ms,
+            timed = timed and true or false,
+        }
+    end
+
+    table.sort(items, function(a, b)
+        local levelA, levelB = a.level or -1, b.level or -1
+        if levelA ~= levelB then
+            return levelA > levelB
+        end
+        if levelA > 0 then
+            local msA, msB = a.ms or math.huge, b.ms or math.huge
+            if msA ~= msB then
+                return msA < msB
+            end
+        end
+        return (a.name or "") < (b.name or "")
+    end)
+
+    return items
+end
+
+local function populateBoardRow(row, item, view)
+    row.run = nil
+    row.board = item
+
+    if item.level and item.level > 0 then
+        row.chip:SetText(string.format("+%d", item.level))
+        row.chip:SetTextColor(keyLevelColor(item.level))
+    else
+        row.chip:SetText("-")
+        row.chip:SetTextColor(0.45, 0.45, 0.50)
+    end
+
+    row.name:SetText(item.name or "?")
+    row.time:SetText(item.ms and ns:FormatTime(item.ms / 1000) or "--")
+
+    if not item.level or item.level == 0 then
+        row.meta:SetText(view == "BEST_TIMED" and "Not yet timed" or "Not yet completed")
+        row.result:SetText("")
+    elseif item.timed then
+        row.meta:SetText("")
+        row.result:SetText("TIMED")
+        row.result:SetTextColor(0.49, 0.99, 0, 1)
+    else
+        row.meta:SetText("Completed over time")
+        row.result:SetText("OVER TIME")
+        row.result:SetTextColor(1, 0.65, 0.20, 1)
+    end
+end
+
 function ns:RefreshHistoryUI()
     local ui = self.ui.history
     if not ui or not ui.root:IsVisible() then
         return
     end
 
+    local view = ui.view or "RUNS"
     local history = self.db.history or {}
     local filter = ui.filter or "ALL"
 
@@ -218,52 +325,69 @@ function ns:RefreshHistoryUI()
     ui.stats[4].value:SetText(totalRuns > 0 and string.format("%.1f", totalDeaths / totalRuns) or "--")
 
     local shown = 0
-    for i = 1, totalRuns do
-        local run = history[i]
-        if runMatchesFilter(run, filter) then
+
+    if view == "BEST_TIMED" or view == "HIGHEST_KEY" then
+        local items = buildLeaderboard(view)
+        for i = 1, #items do
             shown = shown + 1
             local row = acquireRow(shown)
-            row.run = run
-
-            if run.mode == "MYTHIC_PLUS" then
-                local level = run.level or 0
-                row.chip:SetText(string.format("+%d", level))
-                row.chip:SetTextColor(keyLevelColor(level))
-            else
-                local chip = MODE_CHIPS[run.mode] or { text = "D", r = 0.62, g = 0.62, b = 0.62 }
-                row.chip:SetText(chip.text)
-                row.chip:SetTextColor(chip.r, chip.g, chip.b)
-            end
-
-            row.name:SetText(run.name or "?")
-            row.meta:SetText(string.format(
-                "%s  ·  %d %s",
-                date("%b %d · %H:%M", run.at or 0),
-                run.deaths or 0,
-                (run.deaths or 0) == 1 and "death" or "deaths"
-            ))
-            row.time:SetText(self:FormatTime(run.timeSec or 0))
-
-            if run.mode == "MYTHIC_PLUS" then
-                if run.onTime then
-                    row.result:SetText("TIMED")
-                    row.result:SetTextColor(0.49, 0.99, 0, 1)
-                else
-                    row.result:SetText("DEPLETED")
-                    row.result:SetTextColor(1, 0.40, 0.40, 1)
-                end
-            else
-                row.result:SetText("CLEARED")
-                row.result:SetTextColor(0.60, 0.60, 0.65, 1)
-            end
-
+            populateBoardRow(row, items[i], view)
             row:Show()
         end
+        ui.emptyText:SetText(view == "BEST_TIMED"
+            and "No timed Mythic+ runs recorded yet."
+            or "No completed Mythic+ runs recorded yet.")
+    else
+        for i = 1, totalRuns do
+            local run = history[i]
+            if runMatchesFilter(run, filter) then
+                shown = shown + 1
+                local row = acquireRow(shown)
+                row.run = run
+                row.board = nil
+
+                if run.mode == "MYTHIC_PLUS" then
+                    local level = run.level or 0
+                    row.chip:SetText(string.format("+%d", level))
+                    row.chip:SetTextColor(keyLevelColor(level))
+                else
+                    local chip = MODE_CHIPS[run.mode] or { text = "D", r = 0.62, g = 0.62, b = 0.62 }
+                    row.chip:SetText(chip.text)
+                    row.chip:SetTextColor(chip.r, chip.g, chip.b)
+                end
+
+                row.name:SetText(run.name or "?")
+                row.meta:SetText(string.format(
+                    "%s  ·  %d %s",
+                    date("%b %d · %H:%M", run.at or 0),
+                    run.deaths or 0,
+                    (run.deaths or 0) == 1 and "death" or "deaths"
+                ))
+                row.time:SetText(self:FormatTime(run.timeSec or 0))
+
+                if run.mode == "MYTHIC_PLUS" then
+                    if run.onTime then
+                        row.result:SetText("TIMED")
+                        row.result:SetTextColor(0.49, 0.99, 0, 1)
+                    else
+                        row.result:SetText("DEPLETED")
+                        row.result:SetTextColor(1, 0.40, 0.40, 1)
+                    end
+                else
+                    row.result:SetText("CLEARED")
+                    row.result:SetTextColor(0.60, 0.60, 0.65, 1)
+                end
+
+                row:Show()
+            end
+        end
+        ui.emptyText:SetText("No runs recorded yet.\nFinish a dungeon to start your log.")
     end
 
     for i = shown + 1, #ui.rows do
         ui.rows[i]:Hide()
         ui.rows[i].run = nil
+        ui.rows[i].board = nil
     end
 
     if shown == 0 then
@@ -287,8 +411,28 @@ function ns:ApplyHistoryTheme()
     ui.heading:SetTextColor(r, g, b, 1)
     ui.scrollThumb:SetColorTexture(r, g, b, 0.55)
 
+    local view = ui.view or "RUNS"
+
+    for i = 1, #ui.viewButtons do
+        local button = ui.viewButtons[i]
+        if button.viewKey == view then
+            button.label:SetTextColor(r, g, b, 1)
+            button.underline:SetColorTexture(r, g, b, 0.9)
+            button.underline:Show()
+        else
+            button.label:SetTextColor(0.60, 0.60, 0.65, 1)
+            button.underline:Hide()
+        end
+    end
+
+    local showFilters = view == "RUNS"
     for i = 1, #ui.filterButtons do
         local button = ui.filterButtons[i]
+        if showFilters then
+            button:Show()
+        else
+            button:Hide()
+        end
         if button.filterKey == (ui.filter or "ALL") then
             button.label:SetTextColor(r, g, b, 1)
             button.underline:SetColorTexture(r, g, b, 0.9)
@@ -298,6 +442,10 @@ function ns:ApplyHistoryTheme()
             button.underline:Hide()
         end
     end
+
+    ui.subtitle:SetText(view == "BEST_TIMED" and "Highest keystone level timed for each dungeon"
+        or view == "HIGHEST_KEY" and "Highest keystone level completed for each dungeon"
+        or "Your last 100 dungeon and keystone runs")
 end
 
 function ns:BuildHistoryPanel(parent)
@@ -323,15 +471,55 @@ function ns:BuildHistoryPanel(parent)
         stats[i].label:SetText(statLabels[i])
     end
 
+    local VIEW_BUTTON_WIDTH = 110
+    local VIEW_BUTTON_GAP = 8
+
+    local viewButtons = {}
+    for i = 1, #VIEWS do
+        local info = VIEWS[i]
+        local button = CreateFrame("Button", nil, parent)
+        button:SetSize(VIEW_BUTTON_WIDTH, 24)
+        if i == 1 then
+            local startX = centeredRowStartX(#VIEWS, VIEW_BUTTON_WIDTH, VIEW_BUTTON_GAP)
+            button:SetPoint("TOP", parent, "TOP", startX, -98)
+        else
+            button:SetPoint("LEFT", viewButtons[i - 1], "RIGHT", VIEW_BUTTON_GAP, 0)
+        end
+        button.viewKey = info.key
+
+        button.label = button:CreateFontString(nil, "OVERLAY")
+        button.label:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+        button.label:SetPoint("CENTER", button, "CENTER", 0, 2)
+        button.label:SetText(info.label)
+
+        button.underline = button:CreateTexture(nil, "ARTWORK")
+        button.underline:SetPoint("BOTTOMLEFT", button, "BOTTOMLEFT", 8, 0)
+        button.underline:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -8, 0)
+        button.underline:SetHeight(2)
+
+        button:SetScript("OnClick", function(selfButton)
+            ns.ui.history.view = selfButton.viewKey
+            ns:ApplyHistoryTheme()
+            ns.ui.history.scroll:SetVerticalScroll(0)
+            ns:RefreshHistoryUI()
+        end)
+
+        viewButtons[i] = button
+    end
+
+    local FILTER_BUTTON_WIDTH = 80
+    local FILTER_BUTTON_GAP = 6
+
     local filterButtons = {}
     for i = 1, #FILTERS do
         local info = FILTERS[i]
         local button = CreateFrame("Button", nil, parent)
-        button:SetSize(80, 22)
+        button:SetSize(FILTER_BUTTON_WIDTH, 22)
         if i == 1 then
-            button:SetPoint("TOPLEFT", parent, "TOPLEFT", SIDE_INSET, -100)
+            local startX = centeredRowStartX(#FILTERS, FILTER_BUTTON_WIDTH, FILTER_BUTTON_GAP)
+            button:SetPoint("TOP", parent, "TOP", startX, -134)
         else
-            button:SetPoint("LEFT", filterButtons[i - 1], "RIGHT", 6, 0)
+            button:SetPoint("LEFT", filterButtons[i - 1], "RIGHT", FILTER_BUTTON_GAP, 0)
         end
         button.filterKey = info.key
 
@@ -356,13 +544,13 @@ function ns:BuildHistoryPanel(parent)
     end
 
     local divider = parent:CreateTexture(nil, "ARTWORK")
-    divider:SetPoint("TOPLEFT", parent, "TOPLEFT", SIDE_INSET, -128)
-    divider:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -SIDE_INSET, -128)
+    divider:SetPoint("TOPLEFT", parent, "TOPLEFT", SIDE_INSET, -164)
+    divider:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -SIDE_INSET, -164)
     divider:SetHeight(1)
     divider:SetColorTexture(1, 1, 1, 0.08)
 
     local scroll = CreateFrame("ScrollFrame", nil, parent)
-    scroll:SetPoint("TOPLEFT", parent, "TOPLEFT", SIDE_INSET, -136)
+    scroll:SetPoint("TOPLEFT", parent, "TOPLEFT", SIDE_INSET, -172)
     scroll:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -SIDE_INSET, 14)
     scroll:EnableMouseWheel(true)
     scroll:SetScript("OnMouseWheel", function(selfScroll, delta)
@@ -400,7 +588,9 @@ function ns:BuildHistoryPanel(parent)
     self.ui.history = {
         root = parent,
         heading = heading,
+        subtitle = subtitle,
         stats = stats,
+        viewButtons = viewButtons,
         filterButtons = filterButtons,
         scroll = scroll,
         scrollChild = scrollChild,
@@ -408,6 +598,7 @@ function ns:BuildHistoryPanel(parent)
         emptyText = emptyText,
         rows = {},
         filter = "ALL",
+        view = "RUNS",
         maxScroll = 0,
     }
 

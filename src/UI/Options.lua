@@ -135,6 +135,9 @@ local EXPORT_FIELDS = {
     "showPaceHints",
     "autoSlotKeystone",
     "showUntimedStopwatch",
+    "announceGroupFilled",
+    "announceGroupFilledToParty",
+    "announceDungeonCompleteToParty",
     "dungeonMode",
     "previewScenario",
     "useFloodgateCompletedPreview",
@@ -417,6 +420,9 @@ local function buildExportString()
         showPaceHints = profile.showPaceHints and "1" or "0",
         autoSlotKeystone = profile.autoSlotKeystone and "1" or "0",
         showUntimedStopwatch = profile.showUntimedStopwatch and "1" or "0",
+        announceGroupFilled = profile.announceGroupFilled and "1" or "0",
+        announceGroupFilledToParty = profile.announceGroupFilledToParty and "1" or "0",
+        announceDungeonCompleteToParty = profile.announceDungeonCompleteToParty and "1" or "0",
         dungeonMode = tostring(profile.dungeonMode or "AUTO"),
         previewScenario = tostring(profile.previewScenario or "LIVE"),
         useFloodgateCompletedPreview = ((profile.previewScenario or "LIVE") == "FLOODGATE_COMPLETED") and "1" or "0",
@@ -493,6 +499,15 @@ local function applyImportString(serialized)
     end
     if map.showUntimedStopwatch then
         profile.showUntimedStopwatch = map.showUntimedStopwatch == "1"
+    end
+    if map.announceGroupFilled then
+        profile.announceGroupFilled = map.announceGroupFilled ~= "0"
+    end
+    if map.announceGroupFilledToParty then
+        profile.announceGroupFilledToParty = map.announceGroupFilledToParty == "1"
+    end
+    if map.announceDungeonCompleteToParty then
+        profile.announceDungeonCompleteToParty = map.announceDungeonCompleteToParty == "1"
     end
     if map.dungeonMode then
         if map.dungeonMode == "AUTO"
@@ -988,6 +1003,9 @@ function ns:RefreshOptionsUI()
     frame.showPaceHintsToggle:SetChecked(profile.showPaceHints and true or false)
     frame.autoSlotKeystoneToggle:SetChecked(profile.autoSlotKeystone and true or false)
     frame.untimedStopwatchToggle:SetChecked(profile.showUntimedStopwatch and true or false)
+    frame.announceGroupFilledToggle:SetChecked(profile.announceGroupFilled and true or false)
+    frame.announceGroupFilledToPartyToggle:SetChecked(profile.announceGroupFilledToParty and true or false)
+    frame.announceDungeonCompleteToPartyToggle:SetChecked(profile.announceDungeonCompleteToParty and true or false)
     frame.useClassColorToggle:SetChecked(appearance.useClassColor and true or false)
     dropdownSetValue(frame.dungeonModeDrop.dropdown, DUNGEON_MODE_OPTIONS, profile.dungeonMode or "AUTO")
     dropdownSetValue(frame.previewScenarioDrop.dropdown, PREVIEW_SCENARIO_OPTIONS, profile.previewScenario or "LIVE")
@@ -1271,7 +1289,7 @@ function ns:BuildOptionsUI()
     panels["HISTORY"] = historyPanel
     ns:BuildHistoryPanel(historyPanel)
 
-    local generalCore = createSection(generalPanel.content, "Core Tracking", 0, 236)
+    local generalCore = createSection(generalPanel.content, "Core Tracking", 0, 332)
     local lockToggle = createToggleRow(generalCore, "Lock tracker position", "TOPLEFT", generalCore, "TOPLEFT", 14, -44, function(value)
         ns.db.profile.locked = value and true or false
         ns:RefreshVisibility()
@@ -1297,8 +1315,17 @@ function ns:BuildOptionsUI()
         ns.db.profile.showUntimedStopwatch = value and true or false
         ns:Render()
     end)
+    local announceGroupFilledToggle = createToggleRow(generalCore, "Announce when Group Finder party fills", "TOPLEFT", untimedStopwatchToggle, "BOTTOMLEFT", 0, -10, function(value)
+        ns.db.profile.announceGroupFilled = value and true or false
+    end)
+    local announceGroupFilledToPartyToggle = createToggleRow(generalCore, "Also broadcast to party chat", "TOPLEFT", announceGroupFilledToggle, "BOTTOMLEFT", 14, -10, function(value)
+        ns.db.profile.announceGroupFilledToParty = value and true or false
+    end)
+    local announceDungeonCompleteToPartyToggle = createToggleRow(generalCore, "Announce dungeon completion in party chat", "TOPLEFT", announceGroupFilledToPartyToggle, "BOTTOMLEFT", -14, -10, function(value)
+        ns.db.profile.announceDungeonCompleteToParty = value and true or false
+    end)
 
-    local generalAdvanced = createSection(generalPanel.content, "Advanced", -248, 180)
+    local generalAdvanced = createSection(generalPanel.content, "Advanced", -344, 180)
     local dungeonModeDrop = makeDropdown(
         generalAdvanced,
         "Tracked Dungeon Mode",
@@ -1333,7 +1360,7 @@ function ns:BuildOptionsUI()
     styleModernDropdown(previewScenarioDrop)
     attachSectionCollapse(generalAdvanced, { dungeonModeDrop, previewScenarioDrop }, 180, 38)
 
-    local supportSection = createSection(generalPanel.content, "Help & Feedback", -440, 120)
+    local supportSection = createSection(generalPanel.content, "Help & Feedback", -536, 120)
     local supportLabel = label(supportSection, "Questions or issues? Join the Discord", "GameFontNormalSmall", "TOPLEFT", supportSection, "TOPLEFT", 14, -42)
     supportLabel:SetTextColor(0.90, 0.90, 0.93)
     local supportLinkBox = makeInput(supportSection, 520, "TOPLEFT", supportLabel, "BOTTOMLEFT", 0, -6)
@@ -1538,7 +1565,7 @@ function ns:BuildOptionsUI()
         38
     )
 
-    generalPanel.content:SetHeight(600)
+    generalPanel.content:SetHeight(696)
     layoutPanel.content:SetHeight(480)
     visualPanel.content:SetHeight(500)
     fontsPanel.content:SetHeight(260)
@@ -1551,6 +1578,9 @@ function ns:BuildOptionsUI()
     frame.showPaceHintsToggle = showPaceHintsToggle
     frame.autoSlotKeystoneToggle = autoSlotKeystoneToggle
     frame.untimedStopwatchToggle = untimedStopwatchToggle
+    frame.announceGroupFilledToggle = announceGroupFilledToggle
+    frame.announceGroupFilledToPartyToggle = announceGroupFilledToPartyToggle
+    frame.announceDungeonCompleteToPartyToggle = announceDungeonCompleteToPartyToggle
     frame.useClassColorToggle = useClassColorToggle
     frame.dungeonModeDrop = dungeonModeDrop
     frame.previewScenarioDrop = previewScenarioDrop

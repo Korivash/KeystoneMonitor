@@ -86,6 +86,8 @@ local function rebuildRunHistoryCache()
                     bestOnTimeLevel = nil,
                     highestTimedLevel = nil,
                     bestOnTimeAtHighestLevelMs = nil,
+                    highestLevel = nil,
+                    bestDurationAtHighestLevelMs = nil,
                 }
                 mapData[mapID] = entry
             end
@@ -110,6 +112,16 @@ local function rebuildRunHistoryCache()
                     end
                 end
             end
+
+            local completedLevel = keyLevelFromRun(run)
+            if completedLevel and completedLevel > 0 then
+                if (not entry.highestLevel) or completedLevel > entry.highestLevel then
+                    entry.highestLevel = completedLevel
+                    entry.bestDurationAtHighestLevelMs = durationMs
+                elseif completedLevel == entry.highestLevel and ((not entry.bestDurationAtHighestLevelMs) or durationMs < entry.bestDurationAtHighestLevelMs) then
+                    entry.bestDurationAtHighestLevelMs = durationMs
+                end
+            end
         end
     end
 
@@ -131,6 +143,46 @@ end
 
 function ns:InvalidateRunHistoryCache()
     markRunHistoryDirty()
+end
+
+function ns:GetDungeonMapRecord(mapID)
+    return getMapRecord(mapID)
+end
+
+function ns:GetDungeonPool()
+    local seen = {}
+    local pool = {}
+
+    if C_ChallengeMode and C_ChallengeMode.GetMapTable then
+        local ok, mapIDs = pcall(C_ChallengeMode.GetMapTable)
+        if ok and type(mapIDs) == "table" then
+            for i = 1, #mapIDs do
+                local mapID = tonumber(mapIDs[i])
+                if mapID and not seen[mapID] then
+                    seen[mapID] = true
+                    local name = C_ChallengeMode.GetMapUIInfo and C_ChallengeMode.GetMapUIInfo(mapID)
+                    pool[#pool + 1] = { mapID = mapID, name = name or ("Dungeon " .. mapID) }
+                end
+            end
+        end
+    end
+
+    if runHistoryCache.dirty then
+        rebuildRunHistoryCache()
+    end
+    for mapID in pairs(runHistoryCache.byMap) do
+        if not seen[mapID] then
+            seen[mapID] = true
+            local name = C_ChallengeMode and C_ChallengeMode.GetMapUIInfo and C_ChallengeMode.GetMapUIInfo(mapID)
+            pool[#pool + 1] = { mapID = mapID, name = name or ("Dungeon " .. mapID) }
+        end
+    end
+
+    table.sort(pool, function(a, b)
+        return (a.name or "") < (b.name or "")
+    end)
+
+    return pool
 end
 
 function ns:RecordRunSplits()
@@ -160,11 +212,26 @@ function ns:RecordRunSplits()
         onTime = state.completedOnTime and true or false,
     })
 
+    if self.db.profile.announceDungeonCompleteToParty then
+        local deaths = state.deathCount or 0
+        local timeSec = timeMs and (timeMs / 1000) or state.elapsed
+        self:AnnounceToParty(string.format(
+            "Dungeon %s in %s - %d %s",
+            state.completedOnTime and "Timed" or "Not Timed",
+            self:FormatTime(timeSec),
+            deaths,
+            deaths == 1 and "death" or "deaths"
+        ))
+    end
+
     if C_Timer then
         C_Timer.After(2, function()
             markRunHistoryDirty()
             if ns and ns.Render then
                 ns:Render()
+            end
+            if ns and ns.NotifyHistoryChanged then
+                ns:NotifyHistoryChanged()
             end
         end)
     end

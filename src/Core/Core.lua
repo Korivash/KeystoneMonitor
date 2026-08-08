@@ -11,6 +11,14 @@ function ns:Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cff6cc6ffKeystone Monitor|r " .. tostring(msg))
 end
 
+function ns:AnnounceToParty(msg)
+    if not IsInGroup or not IsInGroup() or not SendChatMessage then
+        return
+    end
+    local chatType = (IsInRaid and IsInRaid()) and "RAID" or "PARTY"
+    SendChatMessage("Keystone Monitor: " .. tostring(msg), chatType)
+end
+
 function ns:Initialize()
     self:InitDB()
     self:BuildUI()

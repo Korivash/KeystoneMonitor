@@ -6,6 +6,19 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-08
+
+### Added
+
+- Best Timed and Highest Key tabs alongside Runs in the Run History panel. Best Timed lists every Mythic+ dungeon with the highest level you've timed and your best time at that level; Highest Key lists the highest level you've completed per dungeon (timed or not), flagged TIMED / OVER TIME. Both are built from your full Blizzard Mythic+ run history, not just the last 100 logged runs, and cover the whole current season's dungeon pool even for dungeons you haven't run yet.
+- "Announce when Group Finder party fills" option (General tab, on by default). When your party reaches 5, Keystone Monitor prints a local chat line naming the keystone/dungeon, e.g. `Keystone Monitor: Group Filled For +15 Operation: Mechagon`. If you posted the listing, it reads your own held keystone; if you applied to and joined someone else's group instead, it reads that listing's own dungeon and comment text rather than your key. Re-arms if the group drops below 5 and fills again.
+- "Also broadcast to party chat" sub-option (General tab, off by default). Sends the same group-filled message to party (or raid) chat via `SendChatMessage` so the whole group sees it, not just you.
+- "Announce dungeon completion in party chat" option (General tab, off by default). When any tracked dungeon run finishes, sends a party/raid chat line with the clear time and death count — `Keystone Monitor: Dungeon Timed in 24:15 - 2 deaths` / `Dungeon Not Timed in 32:40 - 5 deaths` for Mythic+, `Dungeon Completed in 18:02 - 1 death` for every other mode.
+
+### Changed
+
+- Run History's Runs/Best Timed/Highest Key tabs and the All/Mythic+/Dungeons filters are now centered as their own rows instead of hugging the left edge, with more vertical breathing room below the summary stats.
+
 ## [0.9.0] - 2026-08-05
 
 ### Added

@@ -22,6 +22,7 @@ end
 local function onThemeEvent()
     ns:ApplyTheme()
     ns:SyncChallengeState(false)
+    ns:CheckGroupFinderListing()
     if ns:IsDebugModeEnabled() then
         ns:PrintDungeonModeDebug("ENTER_WORLD")
     end
@@ -115,6 +116,19 @@ local function onKeystoneReceptacleOpen()
     ns:TryAutoSlotKeystone()
 end
 
+local function onLFGListingChanged()
+    ns:CheckGroupFinderListing()
+    ns:CheckGroupFinderFilled()
+end
+
+local function onGroupRosterUpdate()
+    ns:CheckGroupFinderFilled()
+end
+
+local function onLFGApplicationStatusUpdated(_, searchResultID, newStatus)
+    ns:HandleLFGApplicationStatusUpdated(searchResultID, newStatus)
+end
+
 local handlers = {
     ADDON_LOADED = onLoaded,
     PLAYER_ENTERING_WORLD = onThemeEvent,
@@ -137,6 +151,9 @@ local handlers = {
     CHALLENGE_MODE_KEYSTONE_RECEPTABLE_OPEN = onKeystoneReceptacleOpen,
     UNIT_HEALTH = onUnitVitals,
     UNIT_FLAGS = onUnitVitals,
+    LFG_LIST_ACTIVE_ENTRY_UPDATE = onLFGListingChanged,
+    GROUP_ROSTER_UPDATE = onGroupRosterUpdate,
+    LFG_LIST_APPLICATION_STATUS_UPDATED = onLFGApplicationStatusUpdated,
 }
 
 local DEFERRED_EVENTS = {

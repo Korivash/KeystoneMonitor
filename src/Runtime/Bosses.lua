@@ -261,6 +261,16 @@ function ns:HandleDungeonRunCompleted()
         onTime = nil,
     })
 
+    if self.db.profile.announceDungeonCompleteToParty then
+        local deaths = self.state.deathCount or 0
+        self:AnnounceToParty(string.format(
+            "Dungeon Completed in %s - %d %s",
+            self:FormatTime(timeSec),
+            deaths,
+            deaths == 1 and "death" or "deaths"
+        ))
+    end
+
     self:UpdateDeathWatcher()
 end
 
