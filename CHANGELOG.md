@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-08-18
+
+### Fixed
+
+- Party/raid announcements (dungeon completion, group-finder fill) no longer throw an `ADDON_ACTION_BLOCKED` error on the current client, which now requires a direct player action to send chat from automated code. `AnnounceToParty` catches the block and falls back to a local chat line instead.
+- Forcing an objective tracker refresh after unhiding it could taint the tracker's update chain and later crash Blizzard's own UI (`GetAuraDataByIndex(): Auras cannot be accessed when secret while tainted by 'KeystoneMonitor'`) under the client's new secret-value protections. The addon now just shows the tracker and lets Blizzard's own event cycle refresh it.
+
 ## [0.10.0] - 2026-08-08
 
 ### Added

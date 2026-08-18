@@ -16,7 +16,10 @@ function ns:AnnounceToParty(msg)
         return
     end
     local chatType = (IsInRaid and IsInRaid()) and "RAID" or "PARTY"
-    SendChatMessage("Keystone Monitor: " .. tostring(msg), chatType)
+    local ok = pcall(SendChatMessage, "Keystone Monitor: " .. tostring(msg), chatType)
+    if not ok then
+        self:Print(msg)
+    end
 end
 
 function ns:Initialize()
@@ -57,7 +60,7 @@ function ns:ShowObjectiveTracker()
     if not ObjectiveTrackerFrame then
         return
     end
-    ObjectiveTrackerFrame:Update()
+    ObjectiveTrackerFrame:Show()
 end
 
 function ns:UpdateObjectiveTrackerVisibility()
