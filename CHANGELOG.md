@@ -6,6 +6,23 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-19
+
+### Added
+
+- "Announce when I get a new Mythic+ key" option (General tab, on by default), with an "Also broadcast to party chat" sub-option (off by default). Detects a genuine key upgrade or a key for a new dungeon and announces it with a real, clickable keystone link, e.g. `Keystone Monitor: My new Key is [Keystone: Operation: Mechagon (7)]`. Never fires on login or when the same dungeon's key simply depletes to a lower level.
+- `!keys` party chat command. Typing `!keys` in party chat makes every group member running Keystone Monitor reply with their current key.
+- Peer version check. Keystone Monitor broadcasts its version to party/guild members also running it (throttled) and prints a one-time local notice if someone nearby is running a newer version.
+- Load message on login/reload: `Keystone Monitor vX.X.X loaded. /km for settings.`
+
+### Fixed
+
+- `!keys` and the peer version check could throw a Lua error reading party/addon-message chat text (`attempt to index ... a secret string value`) under the client's taint protections when execution had been tainted elsewhere; both now skip that message instead of erroring.
+
+### Removed
+
+- "Announce when Group Finder party fills" and its "Also broadcast to party chat" sub-option. The feature could not reliably distinguish "my own hosted key filled" from "I joined someone else's group" and kept announcing the player's own key regardless of which one actually filled — removed rather than leave a misleading announcement in place.
+
 ## [0.10.1] - 2026-08-18
 
 ### Fixed

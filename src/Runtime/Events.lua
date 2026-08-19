@@ -22,7 +22,8 @@ end
 local function onThemeEvent()
     ns:ApplyTheme()
     ns:SyncChallengeState(false)
-    ns:CheckGroupFinderListing()
+    ns:ScheduleOwnedKeystoneCheck(2)
+    ns:BroadcastVersion("GUILD")
     if ns:IsDebugModeEnabled() then
         ns:PrintDungeonModeDebug("ENTER_WORLD")
     end
@@ -76,6 +77,11 @@ local function onScenarioUpdate()
 end
 
 local function onChallengeCompleted()
+    if C_MythicPlus and C_MythicPlus.RequestRewards then
+        C_MythicPlus.RequestRewards()
+    end
+    ns:ScheduleOwnedKeystoneCheck(3)
+
     if not isMythicPlusTrackingEnabled() then
         return
     end
@@ -85,6 +91,8 @@ local function onChallengeCompleted()
 end
 
 local function onChallengeReset()
+    ns:ScheduleOwnedKeystoneCheck(2)
+
     if not isMythicPlusTrackingEnabled() then
         return
     end
@@ -116,17 +124,20 @@ local function onKeystoneReceptacleOpen()
     ns:TryAutoSlotKeystone()
 end
 
-local function onLFGListingChanged()
-    ns:CheckGroupFinderListing()
-    ns:CheckGroupFinderFilled()
+local function onOwnedItemChanged()
+    ns:ScheduleOwnedKeystoneCheck(1.5)
+end
+
+local function onPartyChatMessage(_, text)
+    ns:HandlePartyKeysTrigger(text)
+end
+
+local function onAddonMessage(_, prefix, message, channel, sender)
+    ns:HandleVersionBroadcast(prefix, message, channel, sender)
 end
 
 local function onGroupRosterUpdate()
-    ns:CheckGroupFinderFilled()
-end
-
-local function onLFGApplicationStatusUpdated(_, searchResultID, newStatus)
-    ns:HandleLFGApplicationStatusUpdated(searchResultID, newStatus)
+    ns:BroadcastVersion("PARTY")
 end
 
 local handlers = {
@@ -149,11 +160,13 @@ local handlers = {
     ENCOUNTER_START = onEncounterStart,
     ENCOUNTER_END = onEncounterEnd,
     CHALLENGE_MODE_KEYSTONE_RECEPTABLE_OPEN = onKeystoneReceptacleOpen,
+    ITEM_CHANGED = onOwnedItemChanged,
+    CHAT_MSG_PARTY = onPartyChatMessage,
+    CHAT_MSG_PARTY_LEADER = onPartyChatMessage,
+    CHAT_MSG_ADDON = onAddonMessage,
     UNIT_HEALTH = onUnitVitals,
     UNIT_FLAGS = onUnitVitals,
-    LFG_LIST_ACTIVE_ENTRY_UPDATE = onLFGListingChanged,
     GROUP_ROSTER_UPDATE = onGroupRosterUpdate,
-    LFG_LIST_APPLICATION_STATUS_UPDATED = onLFGApplicationStatusUpdated,
 }
 
 local DEFERRED_EVENTS = {

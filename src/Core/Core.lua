@@ -23,6 +23,11 @@ function ns:AnnounceToParty(msg)
 end
 
 function ns:Initialize()
+    self.version = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(self.addonName, "Version"))
+        or (GetAddOnMetadata and GetAddOnMetadata(self.addonName, "Version"))
+        or self.version
+        or "?"
+
     self:InitDB()
     self:BuildUI()
     self:HookObjectiveTracker()
@@ -31,6 +36,8 @@ function ns:Initialize()
     self:RegisterRuntimeEvents()
     self:ApplyTheme()
     self:SyncChallengeState(true)
+
+    self:Print(string.format("v%s loaded. /km for settings.", self.version))
 end
 
 function ns:HookObjectiveTracker()
