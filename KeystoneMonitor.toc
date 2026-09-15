@@ -2,7 +2,7 @@
 ## Title: Keystone Monitor - Mythic+ Timer, Splits & Run History
 ## Notes: Mythic+ timer with splits vs your best, pace hints, death log, and a full run history. Tracks every 5-player dungeon mode.
 ## Author: Korivash
-## Version: 0.11.0
+## Version: 0.12.0
 ## IconTexture: Interface\AddOns\KeystoneMonitor\keystone.png
 ## SavedVariables: KeystoneMonitorDB
 ## Category-enUS: Mythic+ Dungeons
@@ -18,6 +18,7 @@ src/Runtime/VersionCheck.lua
 src/UI/Render.lua
 src/UI/History.lua
 src/UI/Options.lua
+src/UI/Welcome.lua
 src/Runtime/Timer.lua
 src/Runtime/Events.lua
 src/UI/Commands.lua

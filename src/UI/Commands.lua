@@ -63,6 +63,11 @@ function ns:RegisterSlashCommands()
             return
         end
 
+        if cmd == "tutorial" then
+            self:ShowWelcomeWizard()
+            return
+        end
+
         if cmd == "resetrun" then
             self:ClearRunSnapshot()
             self._bossListKey = nil
@@ -87,6 +92,6 @@ function ns:RegisterSlashCommands()
             return
         end
 
-        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km resetrun, /km debug, /km debug now")
+        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km resetrun, /km tutorial, /km debug, /km debug now")
     end
 end

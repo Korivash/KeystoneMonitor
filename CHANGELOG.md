@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
-## [Unreleased]
+## [0.12.0] 2026-09-15
+
+New:
+- Added a first-time setup wizard that walks new users through placing the
+  monitor, choosing which features to enable, and locking it in place when
+  they're done.
+- Added /km tutorial to re-run the setup wizard anytime.
 
 ## [0.11.0] - 2026-08-19
 

@@ -1076,6 +1076,9 @@ function ns:ToggleOptionsUI()
     if self.ui.options:IsShown() then
         self.ui.options:Hide()
     else
+        if self.ui.welcome and self.ui.welcome:IsShown() then
+            self.ui.welcome:Hide()
+        end
         self:RefreshOptionsUI()
         self.ui.options:Show()
     end

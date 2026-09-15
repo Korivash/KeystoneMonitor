@@ -32,12 +32,21 @@ function ns:Initialize()
     self:BuildUI()
     self:HookObjectiveTracker()
     self:BuildOptionsUI()
+    self:BuildWelcomeWizard()
     self:RegisterSlashCommands()
     self:RegisterRuntimeEvents()
     self:ApplyTheme()
     self:SyncChallengeState(true)
 
     self:Print(string.format("v%s loaded. /km for settings.", self.version))
+
+    if not self.db.profile.seenIntro then
+        C_Timer.After(1.5, function()
+            if not ns.db.profile.seenIntro then
+                ns:ShowWelcomeWizard()
+            end
+        end)
+    end
 end
 
 function ns:HookObjectiveTracker()

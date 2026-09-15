@@ -259,6 +259,9 @@ function ns:ApplyTheme()
     if self.ApplyOptionsTheme then
         self:ApplyOptionsTheme()
     end
+    if self.ApplyWelcomeTheme then
+        self:ApplyWelcomeTheme()
+    end
 end
 
 function ns:ApplyFrameSettings()

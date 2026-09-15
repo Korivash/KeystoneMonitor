@@ -3,6 +3,7 @@ local _, ns = ...
 local defaults = {
     profile = {
         locked = true,
+        seenIntro = false,
         showWhenUnlocked = true,
         showBestTimedComparison = true,
         showPaceHints = true,
