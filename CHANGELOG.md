@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.12.1] - 2026-09-15
+
+### Changed
+
+- Support Discord link (Options window and README) now points to our new server: https://discord.gg/MqvnKd2hsE.
+
 ## [0.12.0] 2026-09-15
 
 New:

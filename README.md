@@ -118,7 +118,7 @@ src/UI/Commands.lua          Slash commands
 
 ## Issues & Questions
 
-Found a bug or have a question? Join the [Discord](https://discord.gg/VhAj8K4C6F).
+Found a bug or have a question? Join the [Discord](https://discord.gg/MqvnKd2hsE).
 
 ## Author
 
