@@ -1,8 +1,8 @@
-## Interface: 120100
+## Interface: 120100, 120105
 ## Title: Keystone Monitor - Mythic+ Timer, Splits & Run History
 ## Notes: Mythic+ timer with splits vs your best, pace hints, death log, and a full run history. Tracks every 5-player dungeon mode.
 ## Author: Korivash
-## Version: 0.12.1
+## Version: 0.12.2
 ## IconTexture: Interface\AddOns\KeystoneMonitor\keystone.png
 ## SavedVariables: KeystoneMonitorDB
 ## Category-enUS: Mythic+ Dungeons
