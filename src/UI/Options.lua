@@ -2,7 +2,7 @@ local _, ns = ...
 
 local DEFAULT_X = 0
 local DEFAULT_Y = 120
-local DISCORD_URL = "https://discord.gg/MqvnKd2hsE"
+local DISCORD_URL = "https://discord.gg/YxFRuEPSxZ"
 
 local COLOR_KEYS = {
     { key = "accentColor", label = "Accent", fallback = "53B9FFFF" },
