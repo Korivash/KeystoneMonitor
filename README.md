@@ -116,9 +116,18 @@ src/UI/Options.lua           Options window
 src/UI/Commands.lua          Slash commands
 ```
 
-## Issues & Questions
+## Found a bug?
 
-Found a bug or have a question? Join the [Discord](https://discord.gg/YxFRuEPSxZ).
+Thanks for helping make Keystone Monitor better! First install [BugGrabber](https://www.curseforge.com/wow/addons/bug-grabber) and [BugSack](https://www.curseforge.com/wow/addons/bugsack) from CurseForge (BugGrabber catches the error, BugSack lets you see and send it), then play until the bug happens again.
+
+1. **Send it in game (best):** open BugSack (click its minimap icon or type `/bugsack`), go to the session with the Keystone Monitor error, click **Send bugs**, type `Korivash-Area52` (Korivash on the realm Area 52) and click **Send**. This works while Korivash is online and his character can be reached from your realm.
+2. **Or send it on Discord or GitHub:** in BugSack, click into the error and copy it with Ctrl+A, then Ctrl+C. Post it to Korivash on Discord in [Korivash HQ](https://discord.gg/YxFRuEPSxZ), or open an [issue on GitHub](https://github.com/Korivash/KeystoneMonitor/issues).
+
+A quick note about what you were doing when it happened helps a lot.
+
+## Questions
+
+Have a question or an idea? Join the [Discord](https://discord.gg/YxFRuEPSxZ).
 
 ## Author
 

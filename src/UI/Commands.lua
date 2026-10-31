@@ -93,5 +93,6 @@ function ns:RegisterSlashCommands()
         end
 
         self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km resetrun, /km tutorial, /km debug, /km debug now")
+        self:Print("Found a bug? Install BugGrabber and BugSack, then in BugSack click Send bugs and send it to Korivash-Area52 (or Discord: discord.gg/YxFRuEPSxZ)")
     end
 end

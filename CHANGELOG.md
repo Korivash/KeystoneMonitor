@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Changed
+
+- The `/km` command list and the Help & Feedback section now explain how to report a bug with BugGrabber and BugSack.
+- README: new "Found a bug?" section.
+
 ## [0.12.5] - 2026-10-30
 
 ### Changed

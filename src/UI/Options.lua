@@ -1364,7 +1364,7 @@ function ns:BuildOptionsUI()
     attachSectionCollapse(generalAdvanced, { dungeonModeDrop, previewScenarioDrop }, 180, 38)
 
     local supportSection = createSection(generalPanel.content, "Help & Feedback", -536, 120)
-    local supportLabel = label(supportSection, "Questions or issues? Join the Discord", "GameFontNormalSmall", "TOPLEFT", supportSection, "TOPLEFT", 14, -42)
+    local supportLabel = label(supportSection, "Found a bug? BugSack > Send bugs to Korivash-Area52. Questions? Join the Discord", "GameFontNormalSmall", "TOPLEFT", supportSection, "TOPLEFT", 14, -42)
     supportLabel:SetTextColor(0.90, 0.90, 0.93)
     local supportLinkBox = makeInput(supportSection, 520, "TOPLEFT", supportLabel, "BOTTOMLEFT", 0, -6)
     styleModernInput(supportLinkBox, 520, 22)
