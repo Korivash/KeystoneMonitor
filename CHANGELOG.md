@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.12.8] - 2026-11-07
+
+### Fixed
+
+- Party announcements (new key, dungeon completion, !keys) now reach instance chat when you are in a Dungeon Finder group instead of failing silently.
+- "Announce new key" now fires when you had no keystone and receive one (for example from the Great Vault), not only when an existing key changes.
+- Keys obtained from the vault or a vendor are noticed, not only keys that upgrade or deplete.
+- Escape closes the options window and the setup wizard.
+
+### Changed
+
+- Weekly affixes are requested on login and refreshed when they update, so affix icons show up reliably outside a run.
+
 ## [0.12.7] - 2026-11-03
 
 ### Changed

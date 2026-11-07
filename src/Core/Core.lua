@@ -16,6 +16,9 @@ function ns:AnnounceToParty(msg)
         return
     end
     local chatType = (IsInRaid and IsInRaid()) and "RAID" or "PARTY"
+    if LE_PARTY_CATEGORY_INSTANCE and IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+        chatType = "INSTANCE_CHAT"
+    end
     local ok = pcall(SendChatMessage, "Keystone Monitor: " .. tostring(msg), chatType)
     if not ok then
         self:Print(msg)
@@ -35,6 +38,7 @@ function ns:Initialize()
     self:BuildWelcomeWizard()
     self:RegisterSlashCommands()
     self:RegisterRuntimeEvents()
+    self:RequestMythicPlusData()
     self:ApplyTheme()
     self:SyncChallengeState(true)
 
@@ -149,4 +153,16 @@ function ns:SyncChallengeState(forceFull)
     self:RefreshVisibility()
     self:UpdateObjectiveTrackerVisibility()
     self:Render()
+end
+
+function ns:RequestMythicPlusData()
+    if not C_MythicPlus then
+        return
+    end
+    if C_MythicPlus.RequestCurrentAffixes then
+        pcall(C_MythicPlus.RequestCurrentAffixes)
+    end
+    if C_MythicPlus.RequestMapInfo then
+        pcall(C_MythicPlus.RequestMapInfo)
+    end
 end

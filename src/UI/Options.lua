@@ -1112,6 +1112,9 @@ function ns:BuildOptionsUI()
     end)
     styleModernPanel(frame, { 0.043, 0.043, 0.055, 0.98 }, { 0.16, 0.16, 0.20, 1.0 })
     frame:Hide()
+    if UISpecialFrames then
+        tinsert(UISpecialFrames, "KeystoneMonitorOptionsFrame")
+    end
 
     local accentR, accentG, accentB = accentRGB()
 

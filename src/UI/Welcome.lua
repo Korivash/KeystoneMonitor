@@ -190,6 +190,14 @@ function ns:BuildWelcomeWizard()
     frame:SetMovable(true)
     styleModernPanel(frame, { 0.043, 0.043, 0.055, 0.98 }, { 0.16, 0.16, 0.20, 1.0 })
     frame:Hide()
+    frame:SetScript("OnHide", function(selfFrame)
+        if selfFrame._wizardOpen then
+            ns:SkipWelcomeWizard()
+        end
+    end)
+    if UISpecialFrames then
+        tinsert(UISpecialFrames, "KeystoneMonitorWelcomeFrame")
+    end
 
     local accentR, accentG, accentB = accentRGB()
 
@@ -443,6 +451,7 @@ function ns:ShowWelcomeWizard()
         self:Render()
     end
 
+    frame._wizardOpen = true
     frame:SetPage(1)
     frame:Show()
 end
@@ -452,6 +461,7 @@ function ns:FinishWelcomeWizard(shouldLock)
     self.db.profile.seenIntro = true
     self.ui.previewMode = false
     if self.ui.welcome then
+        self.ui.welcome._wizardOpen = false
         self.ui.welcome:Hide()
     end
     self:RefreshOptionsUI()
@@ -469,6 +479,7 @@ function ns:SkipWelcomeWizard()
     self.db.profile.seenIntro = true
     self.ui.previewMode = false
     if frame then
+        frame._wizardOpen = false
         frame:Hide()
     end
     self:RefreshOptionsUI()

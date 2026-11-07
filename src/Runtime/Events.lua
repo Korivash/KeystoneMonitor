@@ -140,6 +140,14 @@ local function onGroupRosterUpdate()
     ns:BroadcastVersion("PARTY")
 end
 
+local function onAffixUpdate()
+    if ns.state.inChallenge then
+        return
+    end
+    ns:RefreshWeeklyAffixes()
+    ns:Render()
+end
+
 local handlers = {
     ADDON_LOADED = onLoaded,
     PLAYER_ENTERING_WORLD = onThemeEvent,
@@ -161,6 +169,8 @@ local handlers = {
     ENCOUNTER_END = onEncounterEnd,
     CHALLENGE_MODE_KEYSTONE_RECEPTABLE_OPEN = onKeystoneReceptacleOpen,
     ITEM_CHANGED = onOwnedItemChanged,
+    BAG_UPDATE_DELAYED = onOwnedItemChanged,
+    MYTHIC_PLUS_CURRENT_AFFIX_UPDATE = onAffixUpdate,
     CHAT_MSG_PARTY = onPartyChatMessage,
     CHAT_MSG_PARTY_LEADER = onPartyChatMessage,
     CHAT_MSG_ADDON = onAddonMessage,

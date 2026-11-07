@@ -40,6 +40,7 @@ function ns:CheckOwnedKeystoneChanged()
     local level = C_MythicPlus.GetOwnedKeystoneLevel()
 
     if not mapID or mapID == 0 or not level or level == 0 then
+        self._ownedKeystone = { mapID = 0, level = 0 }
         return
     end
 
