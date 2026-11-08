@@ -4,6 +4,7 @@ local defaults = {
     profile = {
         locked = true,
         seenIntro = false,
+        seenSetupNotice = false,
         showWhenUnlocked = true,
         showBestTimedComparison = true,
         showPaceHints = true,

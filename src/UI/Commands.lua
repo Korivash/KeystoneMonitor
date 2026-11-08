@@ -63,7 +63,7 @@ function ns:RegisterSlashCommands()
             return
         end
 
-        if cmd == "tutorial" then
+        if cmd == "tutorial" or cmd == "setup" or cmd == "guide" then
             self:ShowWelcomeWizard()
             return
         end
@@ -92,7 +92,7 @@ function ns:RegisterSlashCommands()
             return
         end
 
-        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km resetrun, /km tutorial, /km debug, /km debug now")
+        self:Print("Commands: /km, /km unlock, /km lock, /km show, /km hide, /km reset, /km resetrun, /km setup, /km debug, /km debug now")
         self:Print("Found a bug? Install BugGrabber and BugSack, then in BugSack click Send bugs and send it to Korivash-Area52 (or Discord: discord.gg/YxFRuEPSxZ)")
     end
 end

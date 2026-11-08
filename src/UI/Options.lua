@@ -570,7 +570,7 @@ local function applyImportString(serialized)
     return true, "Profile imported."
 end
 
-local function applyPreset(presetKey)
+local function applyPreset(presetKey, quiet)
     local selected = nil
     for i = 1, #PRESET_OPTIONS do
         if PRESET_OPTIONS[i].key == presetKey then
@@ -606,7 +606,15 @@ local function applyPreset(presetKey)
 
     ns:ApplyFrameSettings()
     ns:RefreshOptionsUI()
-    ns:Print("Applied preset: " .. selected.name)
+    if not quiet then
+        ns:Print("Applied preset: " .. selected.name)
+    end
+end
+
+ns.PRESET_OPTIONS = PRESET_OPTIONS
+
+function ns:ApplyPreset(presetKey, quiet)
+    applyPreset(presetKey, quiet)
 end
 
 local function openColorPickerForKey(frame, key, fallback)
@@ -1424,7 +1432,15 @@ function ns:BuildOptionsUI()
         ns:RestorePosition()
         ns:Print("Position reset.")
     end)
-    attachSectionCollapse(layoutActions, { resetPosButton }, 118, 38)
+    local setupGuideButton = CreateFrame("Button", nil, layoutActions)
+    setupGuideButton:SetSize(160, 24)
+    setupGuideButton:SetPoint("LEFT", resetPosButton, "RIGHT", 10, 0)
+    setupGuideButton:SetText("Setup guide")
+    styleButton(setupGuideButton, { 0.10, 0.10, 0.13, 0.95 }, { 0.15, 0.15, 0.19, 0.98 }, { 0.26, 0.26, 0.32, 1 })
+    setupGuideButton:SetScript("OnClick", function()
+        ns:ShowWelcomeWizard()
+    end)
+    attachSectionCollapse(layoutActions, { resetPosButton, setupGuideButton }, 118, 38)
 
     local visualSection = createSection(visualPanel.content, "Color & Theme", 0, 340)
     local useClassColorToggle = createToggleRow(visualSection, "Use class color for accent", "TOPLEFT", visualSection, "TOPLEFT", 14, -44, function(value)

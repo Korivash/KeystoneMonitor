@@ -319,6 +319,9 @@ function ns:RefreshVisibility()
     else
         self.ui.root:Hide()
     end
+    if self.ui.dragHint then
+        self.ui.dragHint:SetShown(not self.db.profile.locked and not self.state.inChallenge)
+    end
     self:UpdateObjectiveTrackerVisibility()
 end
 
@@ -740,7 +743,25 @@ function ns:BuildUI()
         objectiveRows[i] = row
     end
 
+    local dragHint = CreateFrame("Frame", nil, root, "BackdropTemplate")
+    dragHint:SetPoint("TOPLEFT", root, "TOPLEFT", -2, 2)
+    dragHint:SetPoint("BOTTOMRIGHT", root, "BOTTOMRIGHT", 2, -2)
+    dragHint:SetFrameLevel(root:GetFrameLevel() + 5)
+    dragHint:EnableMouse(false)
+    dragHint:SetBackdrop({ edgeFile = WHITE8X8, edgeSize = 2 })
+    dragHint:SetBackdropBorderColor(1, 0.82, 0, 0.85)
+    dragHint.strip = dragHint:CreateTexture(nil, "ARTWORK")
+    dragHint.strip:SetPoint("TOPLEFT", dragHint, "TOPLEFT", 2, -2)
+    dragHint.strip:SetPoint("TOPRIGHT", dragHint, "TOPRIGHT", -2, -2)
+    dragHint.strip:SetHeight(18)
+    dragHint.strip:SetColorTexture(1, 0.82, 0, 0.18)
+    dragHint.text = dragHint:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    dragHint.text:SetPoint("CENTER", dragHint.strip, "CENTER", 0, 0)
+    dragHint.text:SetText("Unlocked: drag to move")
+    dragHint:Hide()
+
     self.ui.root = root
+    self.ui.dragHint = dragHint
     self.ui.accent = accent
     self.ui.accentGlow = accentGlow
     self.ui.sheen = sheen

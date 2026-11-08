@@ -68,6 +68,7 @@ World of Warcraft\_retail_\Interface\AddOns\KeystoneMonitor\KeystoneMonitor.toc
 | `/km show` | Show the tracker while unlocked |
 | `/km hide` | Hide the tracker outside active runs |
 | `/km reset` | Reset the tracker position |
+| `/km setup` | Open the setup guide (also opens once on a fresh install) |
 | `/km resetrun` | Discard the saved snapshot for the current run and start tracking fresh |
 | `/km debug` | Toggle mode-detection debug logging |
 | `/km debug now` | Print a one-off mode-detection report |

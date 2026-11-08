@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.12.9] - 2026-11-08
+
+### Added
+
+- New setup guide: five short pages on what the panel shows, where to put it, how to use it, presets, scale and opacity, with a live preview of the panel. It opens once on a fresh install; type /km setup, or use the Setup guide button under Layout in settings, to see it again. Existing installs get one chat line about it.
+- While the panel is unlocked it shows a highlighted border and a "drag to move" strip, so you can see what is movable.
+
+### Changed
+
+- /km tutorial still works and now opens the same guide as /km setup.
+
 ## [0.12.8] - 2026-11-07
 
 ### Fixed

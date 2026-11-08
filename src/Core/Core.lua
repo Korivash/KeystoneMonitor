@@ -45,11 +45,13 @@ function ns:Initialize()
     self:Print(string.format("v%s loaded. /km for settings.", self.version))
 
     if not self.db.profile.seenIntro then
+        self.db.profile.seenSetupNotice = true
         C_Timer.After(1.5, function()
-            if not ns.db.profile.seenIntro then
-                ns:ShowWelcomeWizard()
-            end
+            ns:AutoOpenWelcomeWizard()
         end)
+    elseif not self.db.profile.seenSetupNotice then
+        self.db.profile.seenSetupNotice = true
+        self:Print("New setup guide, type /km setup.")
     end
 end
 
