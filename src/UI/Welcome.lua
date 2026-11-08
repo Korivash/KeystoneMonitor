@@ -488,6 +488,9 @@ function ns:BuildWelcomeWizard()
     local chipWidth = #presets > 0 and (math.floor((WIZARD_WIDTH - 68) / #presets) - 6) or 100
     local scaleRow, alphaRow
     local function refreshLook()
+        if ns.DetectPresetKey then
+            ns:DetectPresetKey()
+        end
         for i = 1, #presetChips do
             presetChips[i]:SetSelected(presetChips[i].presetKey == ns.db.profile.presetKey)
         end
@@ -495,9 +498,8 @@ function ns:BuildWelcomeWizard()
         if alphaRow then alphaRow:SetValue(tonumber(ns.db.profile.alpha) or 0) end
     end
     for i, preset in ipairs(presets) do
-        local chip = createStepChip(page4, nil, preset.name, function()
+        local chip = createStepChip(page4, nil, preset.short or preset.name, function()
             ns:ApplyPreset(preset.key, true)
-            ns.db.profile.presetKey = preset.key
             refreshLook()
         end)
         chip.presetKey = preset.key
@@ -531,6 +533,7 @@ function ns:BuildWelcomeWizard()
         title = "Lock the panel in place",
         desc = "Turn off to keep it draggable after setup. /km unlock and /km lock change this any time.",
     }, p5body, -18)
+    frame._lockRow = lockRow
     local openSettingsButton = createButton(page5, "Open Settings", 160, 26)
     openSettingsButton:SetPoint("TOPLEFT", lockRow, "BOTTOMLEFT", 0, -18)
     openSettingsButton:SetScript("OnClick", function()
@@ -581,7 +584,10 @@ function ns:BuildWelcomeWizard()
         elseif index == 4 then
             refreshLook()
         elseif index == 5 then
-            lockRow:SetChecked(true)
+            if self._lockDefaultPending then
+                self._lockDefaultPending = nil
+                lockRow:SetChecked(self._originalLocked ~= false)
+            end
         end
     end
 
@@ -637,7 +643,12 @@ function ns:ShowWelcomeWizard()
         self.ui.options:Hide()
     end
     local frame = self.ui.welcome
+    if frame._wizardOpen and frame:IsShown() then
+        frame:Raise()
+        return
+    end
     frame._originalLocked = self.db.profile.locked
+    frame._lockDefaultPending = true
     self.db.profile.seenSetupNotice = true
     if not self.state.inChallenge then
         self.ui.previewMode = true

@@ -320,9 +320,21 @@ function ns:RefreshVisibility()
         self.ui.root:Hide()
     end
     if self.ui.dragHint then
-        self.ui.dragHint:SetShown(not self.db.profile.locked and not self.state.inChallenge)
+        local wizardOpen = self.ui.welcome and self.ui.welcome._wizardOpen
+        local briefHint = self._dragHintUntil and GetTime() < self._dragHintUntil
+        self.ui.dragHint:SetShown((not self.db.profile.locked) and (not self.state.inChallenge) and (wizardOpen or briefHint) and true or false)
     end
     self:UpdateObjectiveTrackerVisibility()
+end
+
+function ns:ShowDragHintBriefly(seconds)
+    seconds = seconds or 5
+    self._dragHintUntil = GetTime() + seconds
+    if C_Timer and C_Timer.After then
+        C_Timer.After(seconds + 0.1, function()
+            ns:RefreshVisibility()
+        end)
+    end
 end
 
 function ns:RenderTimer()

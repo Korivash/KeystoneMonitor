@@ -46,9 +46,15 @@ function ns:Initialize()
 
     if not self.db.profile.seenIntro then
         self.db.profile.seenSetupNotice = true
-        C_Timer.After(1.5, function()
-            ns:AutoOpenWelcomeWizard()
-        end)
+        local offers = (tonumber(self.db.profile.setupOffers) or 0) + 1
+        self.db.profile.setupOffers = offers
+        if offers <= 3 then
+            C_Timer.After(1.5, function()
+                ns:AutoOpenWelcomeWizard()
+            end)
+        else
+            self.db.profile.seenIntro = true
+        end
     elseif not self.db.profile.seenSetupNotice then
         self.db.profile.seenSetupNotice = true
         self:Print("New setup guide, type /km setup.")

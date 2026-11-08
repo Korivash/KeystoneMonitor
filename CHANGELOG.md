@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [0.12.10] - 2026-11-08
+
+### Fixed
+
+- Setup guide: the preset chips highlight the preset you actually use, also after picking one in settings; the Default chip label now fits; the Lock toggle on the last page starts with your current lock setting; opening the guide while it is already open just brings it to the front; if a fresh install logs out before finishing the guide, it is offered again on the next login (up to three logins).
+- The "drag to move" highlight on the panel now shows only while the guide is open or for a few seconds after you unlock, instead of the whole time the panel is unlocked.
+
 ## [0.12.9] - 2026-11-08
 
 ### Added

@@ -41,6 +41,7 @@ local PRESET_OPTIONS = {
     {
         key = "KEYSTONE",
         name = "Keystone Monitor Default",
+        short = "Default",
         scale = 0.99,
         alpha = 0.00,
         appearance = {
@@ -603,6 +604,7 @@ local function applyPreset(presetKey, quiet)
     appearance.timerColor = presetAppearance.timerColor
     appearance.forcesBarColor = presetAppearance.forcesBarColor
     appearance.forcesBarBGColor = presetAppearance.forcesBarBGColor
+    profile.presetKey = selected.key
 
     ns:ApplyFrameSettings()
     ns:RefreshOptionsUI()
@@ -615,6 +617,39 @@ ns.PRESET_OPTIONS = PRESET_OPTIONS
 
 function ns:ApplyPreset(presetKey, quiet)
     applyPreset(presetKey, quiet)
+end
+
+function ns:DetectPresetKey()
+    local profile = self.db and self.db.profile
+    if not profile then
+        return nil
+    end
+    if profile.presetKey then
+        return profile.presetKey
+    end
+    local appearance = profile.appearance or {}
+    for i = 1, #PRESET_OPTIONS do
+        local preset = PRESET_OPTIONS[i]
+        local matches = true
+        for key, value in pairs(preset.appearance) do
+            local current = appearance[key]
+            if type(value) == "boolean" then
+                current = current and true or false
+            elseif type(value) == "string" and type(current) == "string" then
+                current = string.upper(current)
+                value = string.upper(value)
+            end
+            if current ~= value then
+                matches = false
+                break
+            end
+        end
+        if matches then
+            profile.presetKey = preset.key
+            return preset.key
+        end
+    end
+    return nil
 end
 
 local function openColorPickerForKey(frame, key, fallback)
@@ -1027,7 +1062,7 @@ function ns:RefreshOptionsUI()
     dropdownSetValue(frame.titleFontDrop.dropdown, FONT_OPTIONS, appearance.titleFont or "FRIZQT")
     dropdownSetValue(frame.timerFontDrop.dropdown, FONT_OPTIONS, appearance.timerFont or "ARIALN")
     dropdownSetValue(frame.bodyFontDrop.dropdown, FONT_OPTIONS, appearance.bodyFont or "FRIZQT")
-    dropdownSetValue(frame.presetDrop.dropdown, PRESET_OPTIONS, "KEYSTONE")
+    dropdownSetValue(frame.presetDrop.dropdown, PRESET_OPTIONS, profile.presetKey or "KEYSTONE")
 
     for i = 1, #COLOR_KEYS do
         local entry = COLOR_KEYS[i]
@@ -1306,6 +1341,9 @@ function ns:BuildOptionsUI()
     local generalCore = createSection(generalPanel.content, "Core Tracking", 0, 332)
     local lockToggle = createToggleRow(generalCore, "Lock tracker position", "TOPLEFT", generalCore, "TOPLEFT", 14, -44, function(value)
         ns.db.profile.locked = value and true or false
+        if not value then
+            ns:ShowDragHintBriefly()
+        end
         ns:RefreshVisibility()
         ns:Render()
     end)

@@ -15,6 +15,7 @@ function ns:RegisterSlashCommands()
 
         if cmd == "unlock" then
             self.db.profile.locked = false
+            self:ShowDragHintBriefly()
             self:RefreshOptionsUI()
             self:RefreshVisibility()
             self:Render()
