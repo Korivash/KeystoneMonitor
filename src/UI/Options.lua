@@ -1234,6 +1234,7 @@ function ns:BuildOptionsUI()
         { key = "VISUAL", label = "Visual", icon = "V" },
         { key = "FONTS", label = "Fonts", icon = "F" },
         { key = "PROFILES", label = "Profiles", icon = "P" },
+        { key = "KORIVASH", label = "More from Korivash", icon = "+" },
     }
 
     local panels = {}
@@ -1324,6 +1325,15 @@ function ns:BuildOptionsUI()
         end
     end)
 
+    local hub = ns:BuildKorivashPage(rightPane, function(button)
+        styleButton(button, { 0.13, 0.14, 0.17, 0.96 }, { 0.18, 0.19, 0.23, 0.98 }, { 0.28, 0.30, 0.35, 1.0 })
+    end)
+    panels.KORIVASH = hub
+    function ns:OpenKorivash()
+        searchBox:SetText("")
+        frame:Show()
+        setTab("KORIVASH")
+    end
     local generalPanel = makeTabPanel("GENERAL")
     local layoutPanel = makeTabPanel("LAYOUT")
     local visualPanel = makeTabPanel("VISUAL")

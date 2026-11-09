@@ -1,6 +1,7 @@
 local addonName, ns = ...
 
 ns.addonName = addonName
+ns.version = "0.12.11"
 ns.frame = CreateFrame("Frame", "KeystoneMonitorEventFrame")
 ns.state = {}
 ns.ui = {}

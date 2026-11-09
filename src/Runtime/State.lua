@@ -397,14 +397,19 @@ function ns:RefreshObjectives()
         return false
     end
 
-    if not C_Scenario or not C_Scenario.GetStepInfo then
-        return false
-    end
-    if not C_ScenarioInfo or not C_ScenarioInfo.GetCriteriaInfo then
+    if type(C_ScenarioInfo) ~= "table" or type(C_ScenarioInfo.GetCriteriaInfo) ~= "function" then
         return false
     end
 
-    local _, _, criteriaCount = C_Scenario.GetStepInfo()
+    local criteriaCount
+    if type(C_ScenarioInfo.GetScenarioStepInfo) == "function" then
+        local step = C_ScenarioInfo.GetScenarioStepInfo()
+        criteriaCount = type(step) == "table" and step.numCriteria or nil
+    end
+    if not criteriaCount and type(C_Scenario) == "table" and type(C_Scenario.GetStepInfo) == "function" then
+        local _, _, count = C_Scenario.GetStepInfo()
+        criteriaCount = count
+    end
     if not criteriaCount or criteriaCount <= 0 then
         if #state.objectives > 0 then
             wipe(state.objectives)

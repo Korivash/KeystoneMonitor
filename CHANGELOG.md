@@ -1,3 +1,7 @@
+## 0.12.11
+
+- New: More from Korivash page in settings lists our other addons.
+
 # Changelog
 
 All notable changes to this project will be documented in this file.

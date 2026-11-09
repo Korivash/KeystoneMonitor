@@ -540,6 +540,11 @@ function ns:BuildUI()
     root:SetFrameStrata("HIGH")
     root:SetClampedToScreen(true)
     root:EnableMouse(true)
+    root:HookScript("OnMouseUp", function(owner, mouse)
+        if mouse == "RightButton" then
+            ns:ShowKorivashMenu(owner, "Settings", function() ns:ToggleOptionsUI() end)
+        end
+    end)
     root:SetMovable(true)
     root:RegisterForDrag("LeftButton")
     root:SetScript("OnDragStart", function(frame)
