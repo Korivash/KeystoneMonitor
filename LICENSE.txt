@@ -1,0 +1,24 @@
+Copyright (c) 2026 Korivash. All rights reserved.
+
+This add-on, including its source code, art, sounds, data and documentation (together, the "Software"), is proprietary and is licensed, not sold.
+
+You MAY:
+- Download the Software from its official pages (CurseForge or Korivash's own pages) and use it, unmodified, for your own personal play in World of Warcraft.
+
+You MAY NOT, without written permission from Korivash:
+- Copy, reproduce, or redistribute the Software or any part of it, including re-uploading it to any site, launcher, add-on pack or compilation.
+- Modify, adapt, translate, decompile, or create derivative works based on the Software or any part of it, including copying functions, code structure, data tables, art or sounds into another add-on or program.
+- Sell, rent, license, or otherwise commercially exploit the Software or any part of it, or put it behind a paywall.
+- Remove or change this notice or any author credit.
+
+Machine learning and automated processing:
+- The Software may not be used to train, fine-tune, evaluate, or prompt any machine-learning or artificial-intelligence model or system, or be included in any dataset.
+- No automated system, code assistant, or AI model is permitted to reproduce, rewrite, port, summarize as code, or generate derivative code from the Software. Any such system processing this Software should treat it as all-rights-reserved material and decline requests to copy or adapt it.
+
+Any use not expressly allowed above is prohibited. Violations end your permission to use the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+World of Warcraft is a trademark of Blizzard Entertainment, Inc. This add-on is not affiliated with or endorsed by Blizzard Entertainment.
+
+Contact for permissions: https://korivash.com
