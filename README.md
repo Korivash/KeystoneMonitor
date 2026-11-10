@@ -1,6 +1,6 @@
 # Keystone Monitor
 
-A compact, class-colored dungeon tracker for World of Warcraft that covers **every** 5-player dungeon mode — Follower, Normal, Heroic, Timewalking, Mythic 0, and Mythic+ — from classic dungeons all the way through Midnight content.
+A compact dungeon tracker with fixed cyan colors by default and an optional class-color accent for World of Warcraft that covers **every** 5-player dungeon mode — Follower, Normal, Heroic, Timewalking, Mythic 0, and Mythic+ — from classic dungeons all the way through Midnight content.
 
 Keystone Monitor replaces the default objective tracker during dungeon runs with a clean, movable panel showing your timer, boss progress, enemy forces, deaths, and personal records, then gets out of your way when the run is over.
 
@@ -31,7 +31,7 @@ Keystone Monitor replaces the default objective tracker during dungeon runs with
 ### Everywhere
 - **Death log tooltip** — hover the Deaths line to see exactly who died and when, class-colored.
 - **Run History tab** — three views built into the `/km` window: **Runs** (last 100 runs of any mode, with summary stats, All / Mythic+ / Dungeons filters, and per-run tooltips), **Best Timed** (highest keystone level timed per dungeon, with your best time at that level), and **Highest Key** (highest keystone level completed per dungeon, timed or not). The Best Timed and Highest Key views are drawn from your full Mythic+ run history for the season, covering every dungeon in the current pool even if you haven't logged a run for it yet. Open with `/km` or the watch button on the tracker.
-- **Crash-proof runs** — an in-progress dungeon run survives `/reload`, disconnects, and briefly stepping out of the instance. Timer, boss kills, and deaths all restore automatically.
+- **Run recovery** — non-keystone runs restore timer, boss kills, and deaths from a saved snapshot when the instance and mode match and the run started less than four hours ago. Reloading or briefly stepping out can resume the run; crashes or disconnects can lose changes the game has not written to disk.
 - **Objective tracker replacement** — Blizzard's quest tracker is hidden while a run is active and restored afterward.
 - **New key announcement** (optional, on by default) — when you get a genuinely new or upgraded Mythic+ key, Keystone Monitor prints a local chat line with a real, clickable keystone link (`My new Key is [Keystone: Operation: Mechagon (7)]`). Never fires on login or when your current key simply depletes to a lower level. An "Also broadcast to party chat" sub-option (off by default) sends the same message to party/raid chat.
 - **`!keys` party command** — type `!keys` in party chat and every group member running Keystone Monitor replies with their current key.
@@ -80,8 +80,8 @@ The options window (`/km`) is organized into tabs:
 - **General** — lock/unlock, visibility, best-timed comparison, pace hints, auto keystone insertion, the untimed-dungeon stopwatch, the new key announcement, the dungeon completion announcement, tracked dungeon mode (Auto or force a specific mode), and preview scenarios for styling the tracker without being in a dungeon.
 - **Run History** — Runs (your last 100 runs with summary stats, filters, and per-run tooltips), Best Timed (highest level timed per dungeon), and Highest Key (highest level completed per dungeon, timed or not).
 - **Layout** — frame width/height, scale, and opacity.
-- **Visual** — class-color accent or fully custom hex colors for every element (accent, background, border, text, timer, forces bar), with color pickers.
-- **Fonts** — separate font choices for title, timer, and body text, plus a global font scale.
+- **Visual** — class-color accent or fully custom hex colors for every element (accent, background, border, text, timer, forces bar), with color pickers, plus a global font scale under Visual > Density.
+- **Fonts** — separate font choices for title, timer, and body text.
 - **Profiles** — theme presets, and a compact export/import string so you can share your exact setup or move it between accounts.
 
 ## Saved Data
@@ -95,7 +95,7 @@ All settings and records live in `KeystoneMonitorDB` (account-wide SavedVariable
 
 ## Requirements
 
-- World of Warcraft Retail, Interface `120007` (Midnight).
+- World of Warcraft Retail, Interfaces `120100` and `120105` (Midnight).
 - No libraries or dependencies — the addon is fully self-contained.
 
 ## Project Structure
